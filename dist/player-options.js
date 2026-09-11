@@ -1,0 +1,22 @@
+const $=id=>document.getElementById(id);
+export function playerOptions(storage,pause){
+ const number=(key,fallback,min,max)=>{const n=Number(storage.get('s16.'+key,fallback));return Number.isFinite(n)?Math.max(min,Math.min(max,n)):Number(fallback)};
+ const settings={sensitivity:number('touchSensitivity','1',.2,2.5),size:number('touchSize','1',.85,1.15),layout:'right'};
+ settings.layout=storage.get('s16.touchLayout','right');if(!['right','left','wide'].includes(settings.layout))settings.layout='right';
+ const panel=document.createElement('fieldset');panel.id='mobileSettings';panel.innerHTML='<legend>Mobil kontroller</legend><label>Dokunmatik hassasiyeti <output id="touchSensitivityValue"></output><input id="touchSensitivity" type="range" min="0.2" max="2.5" step="0.1"></label><label>Düğme boyutu <output id="touchSizeValue"></output><input id="touchSize" type="range" min="0.85" max="1.15" step="0.05"></label><label>Yerleşim<select id="touchLayout"><option value="right">Joystick solda</option><option value="left">Joystick sağda (solak)</option><option value="wide">Düğmeler daha içeride</option></select></label><button id="resetTouch" type="button" class="subtle">Mobil ayarları sıfırla</button>';
+ $('settingsDialog').insertBefore(panel,$('settingsDialog').lastElementChild);
+ const root=$('touchControls'),buttons=[...root.querySelectorAll(':scope > .touch-button')];
+ function apply(){root.dataset.layout=settings.layout;for(const b of buttons)b.style.scale=String(settings.size);$('touchSensitivity').value=settings.sensitivity;$('touchSize').value=settings.size;$('touchLayout').value=settings.layout;$('touchSensitivityValue').textContent=settings.sensitivity.toFixed(1);$('touchSizeValue').textContent=Math.round(settings.size*100)+'%';}
+ for(const [id,key] of [['touchSensitivity','sensitivity'],['touchSize','size'],['touchLayout','layout']])$(id).oninput=()=>{settings[key]=key==='layout'?$(id).value:Number($(id).value);storage.set('s16.'+id,settings[key]);apply()};
+ $('resetTouch').onclick=()=>{Object.assign(settings,{sensitivity:1,size:1,layout:'right'});for(const [id,key] of [['touchSensitivity','sensitivity'],['touchSize','size'],['touchLayout','layout']])storage.set('s16.'+id,settings[key]);apply()};apply();
+ const open=document.createElement('button');open.id='gameSettings';open.className='outline';open.textContent='KONTROL AYARLARI';$('leave').before(open);open.onclick=()=>{pause();$('settingsDialog').showModal()};
+ return settings;
+}
+export function spectatorOptions(){
+ const panel=document.createElement('div');panel.id='spectatorOptions';panel.hidden=true;panel.innerHTML='<button id="spectatorFree">Serbest · V</button><button id="spectatorPrev" aria-label="Önceki takım arkadaşı">◀ Q</button><span id="spectatorName" role="status"></span><button id="spectatorNext" aria-label="Sonraki takım arkadaşı">E ▶</button>';
+ document.body.append(panel);if(navigator.maxTouchPoints>0||window.SECTOR16_CONFIG?.native){$('spectatorFree').textContent='Serbest';$('spectatorPrev').textContent='◀';$('spectatorNext').textContent='▶';}let following=false,id=null,allies=[],active=false;
+ function cycle(step){if(!active||!allies.length)return;const index=allies.findIndex(p=>p.id===id);id=allies[(index<0?(step>0?0:allies.length-1):(index+step+allies.length)%allies.length)].id;following=true;}
+ $('spectatorFree').onclick=()=>{following=false;id=null};$('spectatorPrev').onclick=()=>cycle(-1);$('spectatorNext').onclick=()=>cycle(1);
+ document.addEventListener('keydown',e=>{if(!active||e.repeat||document.querySelector('dialog[open]')||!document.getElementById('pause').hidden)return;if(e.code==='KeyQ')cycle(-1);if(e.code==='KeyE')cycle(1);if(e.code==='KeyV'){following=false;id=null}});
+ return {reset(){following=false;id=null;active=false;panel.hidden=true},update(state,body){active=!!(body?.hp<=0&&['rounds','bomb'].includes(state?.mode));panel.hidden=!active;if(!active){following=false;id=null;return null}allies=state.players.filter(p=>p.id!==body.id&&p.team===body.team&&p.hp>0);let target=following?allies.find(p=>p.id===id):null;if(following&&!target){target=allies[0];id=target?.id??null;if(!target)following=false}$('spectatorPrev').disabled=$('spectatorNext').disabled=!allies.length;$('spectatorFree').setAttribute('aria-pressed',String(!following));$('spectatorName').textContent=target?target.name+' · '+target.hp+' HP':allies.length?'Takım arkadaşını seç':'Hayatta takım arkadaşı yok';return target||null}};
+}
