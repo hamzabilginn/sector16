@@ -12,6 +12,7 @@ workflows:
       - name: Install and test
         script: |
           npm ci --include=dev
+          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
           npm test
           npm run build:mobile
           npx cap sync android
