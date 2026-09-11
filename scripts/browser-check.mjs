@@ -13,7 +13,7 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  // Instrument only the served test copy; no QA hooks are shipped in app.js.
- await page.route('**/app.js?*',async route=>{const source=await readFile('dist/app.js','utf8');await route.fulfill({contentType:'text/javascript',body:source+`\nwindow.__qa={impactEffect,deathEffect,clearEffects,getRemote:()=>[...remote.values()].map(v=>v.state),getEffects:()=>effects.length,getBody:()=>body,getCamera:()=>({x:camera.position.x,y:camera.position.y,z:camera.position.z}),fixture:()=>{window.__freezeQA=true;lastState.mode='bomb';lastState.phase='live';lastState.bomb={state:'planted',x:body.x,y:0,z:body.z-4,detonateAt:lastState.time+40,defuseBy:null};body.hp=0;locked=true;tactical.update(lastState);}};const realReceive=receiveState;receiveState=s=>{if(!window.__freezeQA)realReceive(s)};`});});
+ await page.route('**/app.js?*',async route=>{const source=await readFile('dist/app.js','utf8');await route.fulfill({contentType:'text/javascript',body:source+`\nwindow.__qa={impactEffect,deathEffect,clearEffects,getRemote:()=>[...remote.values()].map(v=>v.state),getEffects:()=>effects.length,getBody:()=>body,getCamera:()=>({x:camera.position.x,y:camera.position.y,z:camera.position.z}),fixture:()=>{window.__freezeQA=true;lastState.mode='bomb';lastState.phase='live';lastState.bomb={state:'planted',x:body.x,y:0,z:body.z-4,detonateAt:lastState.time+40,defuseBy:null};body.hp=0;pitch=.5;locked=true;tactical.update(lastState);}};const realReceive=receiveState;receiveState=s=>{if(!window.__freezeQA)realReceive(s)};`});});
  await page.goto('http://127.0.0.1:31816');await page.getByText('SUNUCU ÇEVRİMİÇİ',{exact:true}).waitFor();
  await page.locator('#nickname').fill('Kontrol');await page.locator('#preferredTeam').selectOption('orange');await page.locator('#createButton').click();
  await page.locator('[name=maxPlayers]').selectOption('16');await page.locator('#botCount').fill('15');await page.locator('#botDifficulty').selectOption('hard');
@@ -30,7 +30,7 @@ try{
  await page.waitForTimeout(450);await page.screenshot({path:'artifacts/game.png'});
  await page.evaluate(()=>window.__qa.clearEffects());
  await page.evaluate(()=>window.__qa.fixture());await page.waitForTimeout(100);const before=await page.evaluate(()=>({camera:window.__qa.getCamera(),body:{x:window.__qa.getBody().x,z:window.__qa.getBody().z}}));
- await page.keyboard.down('KeyW');await page.keyboard.down('Space');await page.waitForTimeout(400);await page.keyboard.up('KeyW');await page.keyboard.up('Space');
+ await page.mouse.move(720,500);await page.mouse.down();await page.waitForTimeout(400);await page.mouse.up();
  const after=await page.evaluate(()=>({camera:window.__qa.getCamera(),body:{x:window.__qa.getBody().x,z:window.__qa.getBody().z}}));assert.notEqual(after.camera.y,before.camera.y);assert.deepEqual(after.body,before.body);await page.locator('#spectatorHelp').waitFor({state:'visible'});await page.locator('#objective').waitFor({state:'visible'});await page.screenshot({path:'artifacts/spectator-bomb-v14.png'});
  await page.evaluate(()=>{window.__freezeQA=false;});assert.equal(await page.evaluate(()=>{window.__qa.clearEffects();return window.__qa.getEffects()}),0);
  await page.evaluate(()=>{document.getElementById('pause').hidden=false;});await page.locator('#leave').click();await page.locator('#lobby').waitFor({state:'visible'});assert.equal(await page.locator('#game').evaluate(e=>e.classList.contains('is-dead')),false);

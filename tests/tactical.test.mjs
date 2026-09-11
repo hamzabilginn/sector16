@@ -32,5 +32,17 @@ test('bot roles choose distinct routes and their spawn positions spread during s
  assert.equal(new Set(bots.map(p=>p.ai.role)).size,5);assert.ok(new Set(bots.map(p=>Math.round(p.x/4)+','+Math.round(p.z/4))).size>=4);assert.ok(bots.some(p=>p.z>-20));
 });
 test('free spectator movement changes only camera position and remains within map bounds',()=>{
- const pos={x:0,y:2,z:0};moveSpectator(pos,{x:0,z:-1,y:1,yaw:0},1);assert.ok(pos.z<0&&pos.y>2);for(let i=0;i<100;i++)moveSpectator(pos,{x:1,z:1,y:1,yaw:0,fast:true},1);assert.deepEqual(pos,{x:27,y:18,z:31});
+ const pos={x:0,y:2,z:0};moveSpectator(pos,{x:0,z:-1,pitch:Math.PI/4,yaw:0},1);assert.ok(pos.z<0&&pos.y>2);for(let i=0;i<100;i++)moveSpectator(pos,{x:1,z:1,pitch:-Math.PI/4,yaw:0,fast:true},1);assert.deepEqual(pos,{x:27,y:18,z:31});
+});
+test('spectator follows pitch at constant speed without vertical buttons',()=>{
+ const origin={x:0,y:9,z:0};
+ for(const pitch of [-Math.PI/4,0,Math.PI/4]){
+  const p=moveSpectator({...origin},{x:0,z:-1,yaw:Math.PI/2,pitch},.5);
+  assert.ok(Math.abs(Math.hypot(p.x,p.y-9,p.z)-3)<1e-9);
+  assert.equal(Math.sign(p.y-9),Math.sign(pitch));assert.ok(p.x<0);
+ }
+ const p=moveSpectator({...origin},{x:1,z:0,y:1,yaw:0,pitch:1},.5);assert.equal(p.y,9);
+ assert.deepEqual(moveSpectator({...origin},{x:0,z:0,y:1,yaw:0,pitch:1},.5),origin);
+ const diagonal=moveSpectator({...origin},{x:1,z:-1,yaw:0,pitch:.8},.5);
+ assert.ok(Math.abs(Math.hypot(diagonal.x,diagonal.y-9,diagonal.z)-3)<1e-9);
 });
