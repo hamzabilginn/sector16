@@ -11,7 +11,7 @@ workflows:
     scripts:
       - name: Install and test
         script: |
-          npm ci
+          npm ci --include=dev
           npm test
           npm run build:mobile
           npx cap sync android
@@ -41,7 +41,7 @@ workflows:
     scripts:
       - name: Install and test
         script: |
-          npm ci
+          npm ci --include=dev
           npm test
           npm run build:mobile
           npx cap sync ios
@@ -71,7 +71,7 @@ workflows:
     scripts:
       - name: Install and test
         script: |
-          npm ci
+          npm ci --include=dev
           npm test
           npm run build:mobile
           npx cap sync ios
