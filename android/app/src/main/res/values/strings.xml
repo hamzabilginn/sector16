@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sector 16</string>
+    <string name="title_activity_main">Sector 16</string>
+    <string name="package_name">com.webdehasi.sector16</string>
+    <string name="custom_url_scheme">com.webdehasi.sector16</string>
+</resources>

@@ -1,0 +1,2 @@
+import {clamp} from './world.mjs';
+export function moveSpectator(position,input,dt){const speed=input.fast?13:6;let x=input.x||0,z=input.z||0,y=input.y||0;const length=Math.max(1,Math.hypot(x,z,y));x/=length;z/=length;y/=length;position.x=clamp(position.x+(Math.cos(input.yaw)*x+Math.sin(input.yaw)*z)*speed*dt,-27,27);position.z=clamp(position.z+(-Math.sin(input.yaw)*x+Math.cos(input.yaw)*z)*speed*dt,-31,31);position.y=clamp(position.y+y*speed*dt,.4,18);return position;}

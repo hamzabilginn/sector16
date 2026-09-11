@@ -1,0 +1,18 @@
+Sector 16
+
+Kısa açıklama:
+Takımını seç, botlarla antrenman yap, çevrimiçi taktik mücadeleye katıl.
+
+Açıklama:
+Sector 16, dokunmatik kontrollerle oynanan çevrimiçi bir takım FPS oyunudur.
+
+• Üç haritada takım savaşı, raund ve bomba kurma mücadeleleri.
+• Kolay, orta ve zor botlar; oda oluştururken bot sayısını seçebilme.
+• Sol hareket çubuğu, sürükleyerek nişan alma ve ayrı ateş düğmesi.
+• Takım seçimi, silah değiştirme, şarjör doldurma ve el bombaları.
+• Raundda öldükten sonra serbest izleyici kamerası.
+• Grafik, ses ve hassasiyet ayarları.
+
+İnternet bağlantısı gereklidir. Hesap açmadan oyuncu adıyla katılabilirsiniz.
+Oyun içi para yalnızca maç içi puandır; gerçek para satın alımı yoktur.
+Destek: hazarkal333@gmail.com

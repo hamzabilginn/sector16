@@ -1,0 +1,22 @@
+import {createRequire} from 'node:module';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {readFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH||'playwright');
+const server=spawn(process.execPath,['server/index.mjs'],{env:{...process.env,PORT:'31817',HOST:'127.0.0.1'},windowsHide:true,stdio:['ignore','pipe','pipe']});let browser;
+try{
+await once(server.stdout,'data');browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const context=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true,deviceScaleFactor:1});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('**/app.js?*',async r=>r.fulfill({contentType:'text/javascript',body:await readFile('dist/app.js','utf8')+'\nwindow.__mobileQA={state:()=>({...touch.state,yaw,pitch,locked}),input:currentInput};'}));
+await page.goto('http://127.0.0.1:31817');await page.getByText('SUNUCU ÇEVRİMİÇİ',{exact:true}).waitFor();await page.screenshot({path:'artifacts/mobile-lobby.png'});await page.setViewportSize({width:1280,height:720});await page.screenshot({path:'store/screenshot-lobby.png'});await page.setViewportSize({width:844,height:390});
+await page.locator('#nickname').fill('Mobile QA');await page.locator('#createButton').tap();await page.locator('[name=name]').fill('Touch test');await page.locator('[name=mode]').selectOption('tdm');await page.locator('#botCount').fill('0');await page.locator('#createForm button[type=submit]').tap();await page.locator('#resume').tap();await page.locator('#touchControls').waitFor({state:'visible'});
+const cdp=await context.newCDPSession(page);const box=await page.locator('#moveStick').boundingBox(),fire=await page.locator('#touchFire').boundingBox();
+const left={id:1,x:box.x+box.width/2,y:box.y+box.height*.2};const right={id:2,x:fire.x+fire.width/2,y:fire.y+fire.height/2};
+await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[left]});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[left,right]});await page.waitForTimeout(120);let state=await page.evaluate(()=>window.__mobileQA.state());assert(state.z<-.5&&state.fire,'Move and fire simultaneously');const yaw=state.yaw;
+await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[left,{...right,x:right.x-25}]});await page.waitForTimeout(100);state=await page.evaluate(()=>window.__mobileQA.state());assert.notEqual(state.yaw,yaw,'Aim while moving and firing');
+await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await page.waitForTimeout(80);state=await page.evaluate(()=>window.__mobileQA.state());assert.equal(state.z,0);assert.equal(state.fire,false);
+await page.locator('#touchAim').tap();assert.equal((await page.evaluate(()=>window.__mobileQA.state())).aim,true);await page.locator('#touchPause').tap();assert.equal((await page.evaluate(()=>window.__mobileQA.state())).aim,false);await page.locator('#resume').tap();
+await page.screenshot({path:'artifacts/mobile-game-landscape.png'});await page.setViewportSize({width:1280,height:720});await page.screenshot({path:'store/screenshot-game.png'});await page.setViewportSize({width:390,height:844});await page.screenshot({path:'artifacts/mobile-game-portrait.png'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+await page.evaluate(()=>window.dispatchEvent(new Event('sector16-pause')));await page.locator('#pause').waitFor({state:'visible'});assert.equal((await page.evaluate(()=>window.__mobileQA.state())).locked,false);assert.deepEqual(errors,[]);console.log('Mobile PASS: simultaneous movement/fire/aim, cancellation, pause reset, portrait layout, no runtime errors');
+}finally{await browser?.close();server.kill();}

@@ -1,0 +1,9 @@
+{
+  "appId": "com.webdehasi.sector16",
+  "appName": "Sector 16",
+  "webDir": "www",
+  "backgroundColor": "#111719",
+  "server": {"androidScheme": "https", "cleartext": false},
+  "android": {"allowMixedContent": false, "webContentsDebuggingEnabled": false},
+  "ios": {"contentInset": "never", "preferredContentMode": "mobile"}
+}

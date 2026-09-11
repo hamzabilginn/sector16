@@ -1,0 +1,17 @@
+import {build} from 'esbuild';
+import {mkdir,cp,readFile,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+const root=process.cwd();
+const server=process.env.SECTOR16_SERVER_URL||'https://sector16.18.185.7.35.sslip.io';
+const url=new URL(server);if(url.protocol!=='https:'||url.username||url.password)throw new Error('Release server must use HTTPS without credentials');
+await mkdir('www',{recursive:true});
+await cp('THIRD-PARTY-LICENSES.md','www/licenses.txt');
+for(const file of ['style.css','mobile.css','rounds.css','privacy.html'])await cp('dist/'+file,'www/'+file);
+await build({entryPoints:['mobile/entry.js'],bundle:true,format:'esm',target:['es2022'],outfile:'www/game.js',minify:true,legalComments:'eof',define:{__SERVER_URL__:JSON.stringify(url.origin)},plugins:[{name:'local-root',setup(b){b.onResolve({filter:/^\//},a=>({path:path.join(root,a.path.startsWith('/shared/')?a.path:'dist'+a.path)}));}}]});
+let html=await readFile('dist/index.html','utf8');
+html=html.replace(/<script type="importmap">.*?<\/script>/s,'').replace(/src="\/app.js[^\"]*"/,'src="/game.js"').replace('İndirmeden, doğrudan tarayıcında.','Dokun, takımına katıl, mücadeleye gir.');
+html=html.replaceAll('target="_blank" rel="noopener"','');
+const csp=`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ${url.origin} ${url.origin.replace('https:','wss:')}; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'`;
+html=html.replace('<meta charset="utf-8">',`<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}">`);
+await writeFile('www/index.html',html);
+console.log('Bundled local game assets; server '+url.origin);
