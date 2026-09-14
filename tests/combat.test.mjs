@@ -19,7 +19,8 @@ test('authoritative damage emits impact and lethal hit emits one death event wit
  const s=setup(1);s.fire();assert.equal(s.target.hp,0);assert.equal(s.shooter.kills,1);assert.equal(s.room.scores.blue,1);
  const impact=s.shots.find(m=>m.type==='impact'),kill=s.shots.find(m=>m.type==='kill');
  assert.equal(impact.victimId,'victim');assert.equal(kill.victimId,'victim');assert.equal(kill.generation,1);assert.equal(kill.position.z,-5);assert.ok(Number.isFinite(kill.direction.z));
- assert.ok(s.messages.some(m=>m.type==='hit'&&m.kill));s.fire();assert.equal(s.shots.filter(m=>m.type==='kill').length,1);
+ assert.equal(s.shooter.stats.shots,1);assert.equal(s.shooter.stats.hits,1);assert.equal(s.shooter.stats.headshots,1);assert.equal(s.shooter.stats.damage,1);
+ assert.ok(s.messages.some(m=>m.type==='hit'&&m.kill));assert.ok(s.messages.some(m=>m.type==='hurt'&&m.direction?.z===-1));s.fire();assert.equal(s.shots.filter(m=>m.type==='kill').length,1);
 });
 test('nonlethal impacts preserve health; teammates and protected players receive no impacts',()=>{
  const normal=setup();normal.fire();assert.ok(normal.target.hp>0&&normal.target.hp<100);assert.ok(normal.shots.some(m=>m.type==='impact'));assert.ok(!normal.shots.some(m=>m.type==='kill'));

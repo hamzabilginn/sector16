@@ -18,6 +18,8 @@ Oyun dosyaları uygulamanın içinde paketlidir; maçlar AWS sunucusuna bağlan�
 - `android/`, `ios/`: native projeler; `mobile/`: Capacitor köprüsü.
 - `dist/`, `shared/`: oyun istemcisi ve ortak kod; `server/`: maç sunucusu.
 - `releases/v1.5.0/`: daha önce doğrulanan Android AAB ve test APK'si.
+- `UPDATE-1.6.md`: yönlü ses, takım işaretleri, antrenman ve maç istatistikleri sürüm notları.
+- `releases/v1.6.0/sector16-1.6.0-play.aab`: Play Store için imzalı 1.6.0 paketi (versionCode 16).
 - `store/`: simge, tanıtım görseli ve oyun ekran görüntüleri.
 - `MOBILE-VALIDATION.md`: test kapsamı ve sınırları.
 

@@ -45,6 +45,7 @@ const desert=[...boundary,
  wall(-2,-23,2,3,2.8,'door'),wall(2,-23,2,3,2.8,'door'),
  wall(-25,17,2,4,1.2,'crate'),wall(25,-12,2,4,1.2,'crate')];
 export const MAPS={
+ range:{id:'range',name:'Antrenman Alanı',boxes:[...boundary],spawns:{blue:[[0,27]],orange:[[-16,-8],[-8,-8],[0,-8],[8,-8],[16,-8]]},sky:0x91a8ae,floor:0x6d766c},
  docks:{id:'docks',name:'Doklar',description:'Endüstriyel liman',boxes:DOCK_BOXES,spawns:SPAWNS,floor:0x696f6a,sky:0x809297},
  iceworld:{id:'iceworld',name:'Buz Arenası',description:'Iceworld esintili · Dört blok, hızlı çatışma',boxes:ice,spawns:SPAWNS,floor:0xc2dce3,sky:0xabcddd},
  dust2:{id:'dust2',name:'Çöl Geçidi',description:'Dust 2 esintili · Uzun koridor, orta ve tünel',boxes:desert,spawns:SPAWNS,floor:0xbda071,sky:0xdac6a0}
