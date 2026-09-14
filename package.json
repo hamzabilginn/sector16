@@ -26,5 +26,8 @@
   "devDependencies": {
     "@capacitor/cli": "8.5.1",
     "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "fs-extra": "11.4.0"
   }
 }
