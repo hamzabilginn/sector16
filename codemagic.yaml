@@ -9,9 +9,9 @@ workflows:
       android_signing:
         - sector16_upload
     scripts:
-      - name: Install and test
+      - name: Install dependencies and test
         script: |
-          npm ci --include=dev
+          npm install --include=dev --ignore-scripts
           npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
           npm test
           npm run build:mobile
@@ -29,6 +29,7 @@ workflows:
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
       - android/app/build/outputs/apk/release/*.apk
+
   ios-release:
     name: Sector 16 App Store IPA
     instance_type: mac_mini_m2
@@ -40,11 +41,11 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.webdehasi.sector16
     scripts:
-      - name: Install and test
+      - name: Install dependencies and test
         script: |
-          npm ci --include=dev
-          npm test
+          npm install --include=dev --ignore-scripts
           npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
+          npm test
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
@@ -60,6 +61,7 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
   ios-upload:
     name: Sector 16 - Upload to App Store Connect
     instance_type: mac_mini_m2
@@ -71,11 +73,11 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.webdehasi.sector16
     scripts:
-      - name: Install and test
+      - name: Install dependencies and test
         script: |
-          npm ci --include=dev
-          npm test
+          npm install --include=dev --ignore-scripts
           npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
+          npm test
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
