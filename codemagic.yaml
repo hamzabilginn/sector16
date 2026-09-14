@@ -44,6 +44,7 @@ workflows:
         script: |
           npm ci --include=dev
           npm test
+          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
@@ -74,6 +75,7 @@ workflows:
         script: |
           npm ci --include=dev
           npm test
+          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
