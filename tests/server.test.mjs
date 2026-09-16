@@ -13,7 +13,7 @@ test('live server: bot counts, difficulty, joins, leaves, validation, modes',asy
  const send=(c,m)=>c.ws.send(JSON.stringify(m));
  try{
   await Promise.race([once(server.stdout,'data'),new Promise((_,reject)=>setTimeout(()=>reject(Error('startup timeout')),5000).unref())]);
-  const health=await fetch(`http://127.0.0.1:${port}/api/health`).then(r=>r.json());assert.equal(health.version,'2.0.0');
+  const health=await fetch(`http://127.0.0.1:${port}/api/health`).then(r=>r.json());assert.equal(health.version,'2.0.1');
   const a=await client();send(a,{type:'create',name:'Test Arena',nickname:'Tester',maxPlayers:8,botCount:7,botDifficulty:'hard',mode:'tdm',team:'orange'});
   const joined=await wait(a,m=>m.type==='joined');assert.equal(joined.team,'orange');let state=await wait(a,m=>m.type==='state'&&m.players.length===8);
   assert.equal(state.players.filter(p=>p.bot).length,7);assert.equal(new Set(state.players.map(p=>p.name)).size,8);
@@ -24,6 +24,7 @@ test('live server: bot counts, difficulty, joins, leaves, validation, modes',asy
   a.messages=[];input({reload:true});state=await wait(a,m=>m.type==='state'&&m.players.find(p=>p.id===joined.id)?.reload>0);
   assert.ok(state.players.find(p=>p.id===joined.id).ammo<=used);assert.ok(state.players.find(p=>p.id===joined.id).reloadEnd>state.time);
   a.messages=[];state=await wait(a,m=>m.type==='state'&&m.players.find(p=>p.id===joined.id)?.ammo===30&&m.players.find(p=>p.id===joined.id)?.reload===0);
+  a.messages=[];input({weapon:'knife'});state=await wait(a,m=>m.type==='state'&&m.players.find(p=>p.id===joined.id)?.weapon==='knife');assert.equal(state.players.find(p=>p.id===joined.id).ammo,1);assert.equal(state.players.find(p=>p.id===joined.id).reserve,0);
 
   const rooms=await fetch(`http://127.0.0.1:${port}/api/rooms`).then(r=>r.json());assert.equal(rooms.find(r=>r.id===joined.room.id).botDifficulty,'hard');
   const b=await client();send(b,{type:'join',room:joined.room.id,nickname:'Second'});await wait(b,m=>m.type==='joined');

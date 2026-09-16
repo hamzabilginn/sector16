@@ -55,7 +55,14 @@ function hand(parent,x,y,z){const g=joint(parent,x,y,z);oval(g,glove,.082,.077,.
 function armBetween(parent,start,end){const arm=mesh(parent,new THREE.CapsuleGeometry(.041,1,4,10),fabric);positionArm(arm,start,end);return arm}
 function positionArm(arm,start,end){const delta=end.clone().sub(start);arm.position.copy(start).add(end).multiplyScalar(.5);arm.scale.set(1,delta.length()/1.082,1);arm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize())}
 export function buildViewWeapon(root,type){
- root.scale.set(1,1,1);const pistol=type==='pistol'||type==='deagle',shotgun=type==='shotgun';
+ root.scale.set(1,1,1);
+ if(type==='knife'){
+  const blade=mesh(root,new THREE.ConeGeometry(.065,.46,4),material(0xc4d0d2,.9,.2),0,.035,-.25);blade.rotation.x=-Math.PI/2;blade.rotation.y=Math.PI/4;
+  box(root,rubber,.085,.09,.20,0,-.02,.04);box(root,metal,.14,.025,.045,0,.01,-.07);
+  const grip=hand(root,.018,-.065,.06);armBetween(root,new THREE.Vector3(.18,-.20,.34),grip.position);
+  root.userData={muzzle:-.48,rig:null};return;
+ }
+ const pistol=type==='pistol'||type==='deagle',shotgun=type==='shotgun';
  const slide=joint(root,0,.05,-.095);box(slide,metal,pistol?.081:.088,.07,pistol?.29:.35);for(let i=0;i<5;i++)box(slide,rubber,.085,.032,.008,0,0,.08-i*.017);
  box(root,rubber,.074,.085,pistol?.25:.35,0,-.012,-.06);box(root,rubber,.061,.16,.074,0,-.105,.035).rotation.x=-.20;
  const trigger=mesh(root,new THREE.TorusGeometry(.032,.005,5,12),metal,0,-.066,-.04);trigger.rotation.y=Math.PI/2;

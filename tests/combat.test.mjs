@@ -7,10 +7,10 @@ import {WEAPONS,freshBody,eye,direction,wallDistance,playerHit} from '../shared/
 import {enemies,smokeBlocks,modeLoadout} from '../shared/live-expansion.mjs';
 const source=await readFile(new URL('../server/index.mjs',import.meta.url),'utf8');
 const fireSource=source.slice(source.indexOf('function dealDamage('),source.indexOf('function tick(){'));
-function setup(hp=100,team='orange',invuln=0){
- const shots=[],messages=[];
- const shooter={...freshBody(0,0,0),id:'shooter',team:'blue',weapon:'pistol',ammo:20,inventory:{pistol:{ammo:20}},input:{aim:true},kills:0,money:800,bot:true};
- const target={...freshBody(0,-5,0),id:'victim',name:'Target',team,hp,armor:0,invuln,generation:1,deaths:0};
+function setup(hp=100,team='orange',invuln=0,distance=5,weapon='pistol'){
+ const shots=[],messages=[],w=WEAPONS[weapon];
+ const shooter={...freshBody(0,0,0),id:'shooter',team:'blue',weapon,ammo:w.mag,inventory:{[weapon]:{ammo:w.mag,reserve:w.reserve}},input:{aim:true},kills:0,money:800,bot:true};
+ const target={...freshBody(0,-distance,0),id:'victim',name:'Target',team,hp,armor:0,invuln,generation:1,deaths:0};
  const room={map:'test',mode:'tdm',players:new Map([[shooter.id,shooter],[target.id,target]]),scores:{blue:0,orange:0}};
  const context=vm.createContext({WEAPONS,eye,direction,wallDistance,playerHit,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,MAPS:{test:{boxes:[]}},clock:5,Math:Object.assign(Object.create(Math),{random:()=>.5}),send:(p,m)=>messages.push({id:p.id,...m}),broadcast:(r,m)=>shots.push(m),isRoundMode,dropObjectives:()=>{}});
  vm.runInContext(fireSource+'\nthis.fire=fire;',context);
@@ -22,6 +22,10 @@ test('authoritative damage emits impact and lethal hit emits one death event wit
  assert.equal(impact.victimId,'victim');assert.equal(kill.victimId,'victim');assert.equal(kill.generation,1);assert.equal(kill.position.z,-5);assert.ok(Number.isFinite(kill.direction.z));
  assert.equal(s.shooter.stats.shots,1);assert.equal(s.shooter.stats.hits,1);assert.equal(s.shooter.stats.headshots,1);assert.equal(s.shooter.stats.damage,1);
  assert.ok(s.messages.some(m=>m.type==='hit'&&m.kill));assert.ok(s.messages.some(m=>m.type==='hurt'&&m.direction?.z===-1));s.fire();assert.equal(s.shots.filter(m=>m.type==='kill').length,1);
+});
+test('knife is server-authoritative, keeps its charge and only reaches nearby enemies',()=>{
+ const close=setup(100,'orange',0,1.5,'knife');close.fire();assert.equal(close.target.hp,45);assert.equal(close.shooter.ammo,1);assert.ok(close.shots.some(m=>m.type==='melee'));
+ const far=setup(100,'orange',0,3,'knife');far.fire();assert.equal(far.target.hp,100);assert.ok(!far.shots.some(m=>m.type==='impact'));
 });
 test('nonlethal impacts preserve health; teammates and protected players receive no impacts',()=>{
  const normal=setup();normal.fire();assert.ok(normal.target.hp>0&&normal.target.hp<100);assert.ok(normal.shots.some(m=>m.type==='impact'));assert.ok(!normal.shots.some(m=>m.type==='kill'));
