@@ -83,4 +83,4 @@ export function simulate(p,i,dt=1/60,boxes=BOXES){
 }
 export function rayBox(o,d,b){let near=0,far=120;for(const [a,size] of [['x','w'],['y','h'],['z','d']]){const min=b[a]-b[size]/2,max=b[a]+b[size]/2;if(Math.abs(d[a])<1e-8){if(o[a]<min||o[a]>max)return Infinity;continue}let t1=(min-o[a])/d[a],t2=(max-o[a])/d[a];if(t1>t2)[t1,t2]=[t2,t1];near=Math.max(near,t1);far=Math.min(far,t2);if(near>far)return Infinity}return far>=0?near:Infinity}
 export function wallDistance(o,d,boxes=BOXES){let n=100;for(const b of boxes)n=Math.min(n,rayBox(o,d,b));if(d.y<0)n=Math.min(n,-o.y/d.y);return n}
-export function playerHit(o,d,p){const h=height(p);const head=rayBox(o,d,{x:p.x,y:p.y+h-.18,z:p.z,w:.42,h:.38,d:.42});const body=rayBox(o,d,{x:p.x,y:p.y+(h-.38)/2,z:p.z,w:.62,h:h-.38,d:.52});return head<body?{distance:head,head:true}:{distance:body,head:false}}
+export function playerHit(o,d,p,padding=0){const h=height(p);const head=rayBox(o,d,{x:p.x,y:p.y+h-.18,z:p.z,w:.42+padding,h:.38,d:.42+padding});const body=rayBox(o,d,{x:p.x,y:p.y+(h-.38)/2,z:p.z,w:.62+padding,h:h-.38,d:.52+padding});return head<body?{distance:head,head:true}:{distance:body,head:false}}

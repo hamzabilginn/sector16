@@ -13,7 +13,7 @@ import {promisify} from 'node:util';
 import {WebSocketServer,WebSocket} from 'ws';
 import {LIVE_MODES,modeLoadout,modeLimit,enemies,smokeBlocks,mapWinner} from '../shared/live-expansion.mjs';
 import {profileFor,publicProfile,selectSkin,recordCombat} from './profiles.mjs';
-import {BOXES,SPAWNS,MAPS,WEAPONS,inOwnBase,clamp,direction,freshBody,eye,simulate,wallDistance,playerHit} from '../shared/world.mjs';
+import {BOXES,SPAWNS,MAPS,WEAPONS,inOwnBase,clamp,direction,freshBody,eye,height,simulate,wallDistance,playerHit} from '../shared/world.mjs';
 const scrypt=promisify(crypto.scrypt),root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const APP_ORIGINS=new Set(['https://localhost','capacitor://localhost']);
 const rooms=new Map(),peers=new Set(),limits=new Map(),sessions=new Map();let clock=0;
@@ -116,14 +116,19 @@ function dealDamage(attacker,victim,r,damage,head,weapon,d){
  victim.hp=Math.max(0,victim.hp-damage);if(attacker&&attacker.id!==victim.id)send(attacker,{type:'hit',head,kill:victim.hp===0});send(victim,{type:'hurt',damage,by:attacker?.id,direction:d});
  if(victim.hp===0){const enemy=attacker&&enemies(attacker,victim,r.mode);if(enemy){attacker.kills++;attacker.money=Math.min(16000,attacker.money+300);recordCombat(attacker.profile,{kill:1,headshot:Number(head)});send(attacker,{type:'profile',profile:publicProfile(attacker.profile)});if(!isRoundMode(r.mode)&&r.mode!=='ctf'&&r.mode!=='training')r.scores[attacker.team]++;if(r.mode==='arms'){const ids=modeLoadout('arms',attacker.kills),id=ids[0],w=WEAPONS[id];attacker.inventory={[id]:{ammo:w.mag,reserve:w.reserve},pistol:{ammo:WEAPONS.pistol.mag,reserve:WEAPONS.pistol.reserve},knife:{ammo:1,reserve:0}};attacker.primary=w.slot==='primary'?id:null;attacker.secondary=w.slot==='secondary'?id:'pistol';attacker.weapon=id;attacker.ammo=w.mag;attacker.reserve=w.reserve;}}victim.deaths++;dropObjectives(r,victim,clock);victim.respawn=isRoundMode(r.mode)?0:clock+2;victim.queue=[];victim.input={};broadcast(r,{type:'kill',killer:attacker?.name||'Bomba',victim:victim.name,victimId:victim.id,generation:victim.generation,victimTeam:victim.team,position:{x:victim.x,y:victim.y,z:victim.z},yaw:victim.yaw,crouch:victim.crouch,direction:d,team:attacker?.team||'orange',head,weapon});}
 }
+function rewoundTarget(p,r,v){
+ if(p.bot||!r.history?.length)return v;const when=clock-Math.min((p.ping||0)/2000+.075,.25);let best=null,error=Infinity;
+ for(const frame of r.history){const next=Math.abs(frame.time-when);if(next<error){best=frame;error=next}}
+ return best?.players[v.id]||v;
+}
 function melee(p,r){
  const w=WEAPONS[p.weapon],o={x:p.x,y:eye(p),z:p.z},d=direction(p.yaw,p.pitch);p.stats??={shots:0,hits:0,headshots:0,damage:0};p.stats.shots++;p.nextFire=clock+w.interval;
- let nearest=Math.min(w.range,wallDistance(o,d,MAPS[r.map].boxes)),victim=null;
- for(const v of r.players.values()){if(!enemies(p,v,r.mode)||v.hp<=0||v.invuln>clock)continue;const hit=playerHit(o,d,v);if(hit.distance<=nearest){nearest=hit.distance;victim=v}}
- const to={x:o.x+d.x*nearest,y:o.y+d.y*nearest,z:o.z+d.z*nearest};broadcast(r,{type:'melee',id:p.id,weapon:p.weapon,from:o,to});
+ let nearest=w.range+.4,victim=null,to={x:o.x+d.x*w.range,y:o.y+d.y*w.range,z:o.z+d.z*w.range};
+ for(const v of r.players.values()){if(!enemies(p,v,r.mode)||v.hp<=0||v.invuln>clock)continue;const tested=rewoundTarget(p,r,v),center={x:tested.x,y:tested.y+height(tested)*.55,z:tested.z},dx=center.x-o.x,dy=center.y-o.y,dz=center.z-o.z,dist=Math.hypot(dx,dy,dz);if(!dist||dist>nearest)continue;const toward={x:dx/dist,y:dy/dist,z:dz/dist};if(toward.x*d.x+toward.y*d.y+toward.z*d.z<.78||wallDistance(o,toward,MAPS[r.map].boxes)<dist-.3)continue;nearest=dist;victim=v;to=center}
+ broadcast(r,{type:'melee',id:p.id,weapon:p.weapon,from:o,to});
  if(victim){p.stats.hits++;broadcast(r,{type:'impact',victimId:victim.id,head:false,position:to,direction:d});dealDamage(p,victim,r,w.damage,false,p.weapon,d);}
 }
-function fire(p,r){const w=WEAPONS[p.weapon];if(w.melee)return melee(p,r);p.stats??={shots:0,hits:0,headshots:0,damage:0};p.stats.shots++;let countedHit=false,countedHead=false;p.ammo--;p.inventory[p.weapon].ammo=p.ammo;p.nextFire=clock+w.interval;const spread=w.spread*(p.input?.aim?.65:1)+(Math.hypot(p.vx,p.vz)>1?.022:0)+(p.ground?0:.025);for(let pellet=0;pellet<(w.pellets||1);pellet++){const yaw=p.yaw+(Math.random()-.5)*spread,pitch=p.pitch+(Math.random()-.5)*spread;const o={x:p.x,y:eye(p),z:p.z},d=direction(yaw,pitch);let nearest=wallDistance(o,d,MAPS[r.map].boxes),victim=null,head=false;for(const v of r.players.values()){if(!enemies(p,v,r.mode)||v.hp<=0||v.invuln>clock)continue;let tested=v;if(!p.bot&&r.history?.length){const when=clock-Math.min(p.ping/2000,.15);const frame=r.history.find(f=>f.time>=when);tested=frame?.players[v.id]||v}if(smokeBlocks(o,{x:tested.x,y:eye(tested),z:tested.z},r.smokes,clock))continue;const hit=playerHit(o,d,tested);if(hit.distance<nearest){nearest=hit.distance;victim=v;head=hit.head}}
+function fire(p,r){const w=WEAPONS[p.weapon];if(w.melee)return melee(p,r);p.stats??={shots:0,hits:0,headshots:0,damage:0};p.stats.shots++;let countedHit=false,countedHead=false;p.ammo--;p.inventory[p.weapon].ammo=p.ammo;p.nextFire=clock+w.interval;const spread=w.spread*(p.input?.aim?.65:1)+(Math.hypot(p.vx,p.vz)>1?.014:0)+(p.ground?0:.018);for(let pellet=0;pellet<(w.pellets||1);pellet++){const yaw=p.yaw+(Math.random()-.5)*spread,pitch=p.pitch+(Math.random()-.5)*spread;const o={x:p.x,y:eye(p),z:p.z},d=direction(yaw,pitch);let nearest=wallDistance(o,d,MAPS[r.map].boxes),victim=null,head=false;for(const v of r.players.values()){if(!enemies(p,v,r.mode)||v.hp<=0||v.invuln>clock)continue;const tested=rewoundTarget(p,r,v);if(smokeBlocks(o,{x:tested.x,y:eye(tested),z:tested.z},r.smokes,clock))continue;const hit=playerHit(o,d,tested,.12);if(hit.distance<nearest){nearest=hit.distance;victim=v;head=hit.head}}
  broadcast(r,{type:'shot',id:p.id,weapon:p.weapon,from:o,to:{x:o.x+d.x*nearest,y:o.y+d.y*nearest,z:o.z+d.z*nearest}});
  if(victim){if(!countedHit){p.stats.hits++;countedHit=true}if(head&&!countedHead){p.stats.headshots++;countedHead=true}broadcast(r,{type:'impact',victimId:victim.id,head,position:{x:o.x+d.x*nearest,y:o.y+d.y*nearest,z:o.z+d.z*nearest},direction:d});dealDamage(p,victim,r,head?w.head:w.damage,head,p.weapon,d);}
 
