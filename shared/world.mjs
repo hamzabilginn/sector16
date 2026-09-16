@@ -44,11 +44,13 @@ const desert=[...boundary,
  wall(-19,-25,3,3,1.3,'crate'),wall(19,-25,3,3,1.3,'crate'),
  wall(-2,-23,2,3,2.8,'door'),wall(2,-23,2,3,2.8,'door'),
  wall(-25,17,2,4,1.2,'crate'),wall(25,-12,2,4,1.2,'crate')];
+const refinery=[...boundary,wall(0,0,8,18,6,'building'),wall(-18,-12,10,4,3,'container'),wall(18,12,10,4,3,'container'),wall(-18,15,4,12,4,'building'),wall(18,-15,4,12,4,'building'),wall(-7,-22,5,3,1.4,'crate'),wall(7,22,5,3,1.4,'crate'),wall(-22,2,3,7,2,'barrier'),wall(22,-2,3,7,2,'barrier')];
 export const MAPS={
  range:{id:'range',name:'Antrenman Alanı',boxes:[...boundary],spawns:{blue:[[0,27]],orange:[[-16,-8],[-8,-8],[0,-8],[8,-8],[16,-8]]},sky:0x91a8ae,floor:0x6d766c},
  docks:{id:'docks',name:'Doklar',description:'Endüstriyel liman',boxes:DOCK_BOXES,spawns:SPAWNS,floor:0x696f6a,sky:0x809297},
  iceworld:{id:'iceworld',name:'Buz Arenası',description:'Iceworld esintili · Dört blok, hızlı çatışma',boxes:ice,spawns:SPAWNS,floor:0xc2dce3,sky:0xabcddd},
  dust2:{id:'dust2',name:'Çöl Geçidi',description:'Dust 2 esintili · Uzun koridor, orta ve tünel',boxes:desert,spawns:SPAWNS,floor:0xbda071,sky:0xdac6a0}
+ ,refinery:{id:'refinery',name:'Rafineri',description:'Yakın ve orta menzil çatışma',boxes:refinery,spawns:SPAWNS,floor:0x596064,sky:0x87939a}
 };
 export let BOXES=DOCK_BOXES;
 export function setActiveMap(id){BOXES=(MAPS[id]||MAPS.docks).boxes}

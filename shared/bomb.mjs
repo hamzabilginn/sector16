@@ -1,4 +1,4 @@
-export const isRoundMode=mode=>mode==='rounds'||mode==='bomb';
+export const isRoundMode=mode=>mode==='rounds'||mode==='bomb'||mode==='elimination';
 export const BOMB_SITES=[{id:'A',x:-21,z:20,radius:3},{id:'B',x:21,z:20,radius:3}];
 export const PLANT_SECONDS=3,DEFUSE_SECONDS=7,BOMB_SECONDS=40;
 export function freshBomb(players){const attackers=[...players.values()].filter(p=>p.team==='orange'&&p.hp>0).sort((a,b)=>Number(a.bot)-Number(b.bot));const carrier=attackers[0];return {state:carrier?'carried':'dropped',carrier:carrier?.id||null,x:carrier?.x||0,y:0,z:carrier?.z??-28,site:null,plantBy:null,plantStart:0,defuseBy:null,defuseStart:0,detonateAt:0};}

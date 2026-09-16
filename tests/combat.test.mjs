@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import {isRoundMode} from '../shared/bomb.mjs';
 import {readFile} from 'node:fs/promises';
 import {WEAPONS,freshBody,eye,direction,wallDistance,playerHit} from '../shared/world.mjs';
+import {enemies,smokeBlocks,modeLoadout} from '../shared/live-expansion.mjs';
 const source=await readFile(new URL('../server/index.mjs',import.meta.url),'utf8');
 const fireSource=source.slice(source.indexOf('function dealDamage('),source.indexOf('function tick(){'));
 function setup(hp=100,team='orange',invuln=0){
@@ -11,7 +12,7 @@ function setup(hp=100,team='orange',invuln=0){
  const shooter={...freshBody(0,0,0),id:'shooter',team:'blue',weapon:'pistol',ammo:20,inventory:{pistol:{ammo:20}},input:{aim:true},kills:0,money:800,bot:true};
  const target={...freshBody(0,-5,0),id:'victim',name:'Target',team,hp,armor:0,invuln,generation:1,deaths:0};
  const room={map:'test',mode:'tdm',players:new Map([[shooter.id,shooter],[target.id,target]]),scores:{blue:0,orange:0}};
- const context=vm.createContext({WEAPONS,eye,direction,wallDistance,playerHit,MAPS:{test:{boxes:[]}},clock:5,Math:Object.assign(Object.create(Math),{random:()=>.5}),send:(p,m)=>messages.push({id:p.id,...m}),broadcast:(r,m)=>shots.push(m),isRoundMode,dropObjectives:()=>{}});
+ const context=vm.createContext({WEAPONS,eye,direction,wallDistance,playerHit,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,MAPS:{test:{boxes:[]}},clock:5,Math:Object.assign(Object.create(Math),{random:()=>.5}),send:(p,m)=>messages.push({id:p.id,...m}),broadcast:(r,m)=>shots.push(m),isRoundMode,dropObjectives:()=>{}});
  vm.runInContext(fireSource+'\nthis.fire=fire;',context);
  return {shooter,target,room,shots,messages,fire:()=>context.fire(shooter,room)};
 }

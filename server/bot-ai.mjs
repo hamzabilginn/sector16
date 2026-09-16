@@ -2,11 +2,12 @@ import {MAPS,eye,direction,wallDistance,clamp} from '../shared/world.mjs';
 import {BOT_LEVELS,canBotFire} from '../shared/bots.mjs';
 import {BOMB_SITES} from '../shared/bomb.mjs';
 import {pathTo} from './navigation.mjs';
+import {enemies,smokeBlocks} from '../shared/live-expansion.mjs';
 export const BOT_ROLES=['Hücum','Sol kanat','Sağ kanat','Destek','Savunma'];
 export function makeBrain(index){return {role:index%BOT_ROLES.length,lane:index%3-1,phase:Math.random()*Math.PI*2,nextPlan:0,path:[],nextDecision:0,holdUntil:0,patrol:0,seen:null,lastX:0,lastZ:0,stuck:0};}
 export function tacticalInput(p,r,time){
  const ai=p.ai??=makeBrain(p.botIndex||0),level=BOT_LEVELS[r.botDifficulty],boxes=MAPS[r.map].boxes;
- const enemies=[...r.players.values()].filter(e=>e.team!==p.team&&e.hp>0);const targets=enemies.map(e=>{const dx=e.x-p.x,dz=e.z-p.z,dist=Math.hypot(dx,dz),yaw=Math.atan2(-dx,-dz),pitch=Math.atan2(eye(e)-eye(p)-.2,dist);return {e,dist,yaw,pitch,visible:wallDistance({x:p.x,y:eye(p),z:p.z},direction(yaw,pitch),boxes)>dist-.3};}).sort((a,b)=>(a.visible?-100:0)+a.dist-((b.visible?-100:0)+b.dist));
+ const foes=[...r.players.values()].filter(e=>enemies(p,e,r.mode)&&e.hp>0);const targets=foes.map(e=>{const dx=e.x-p.x,dz=e.z-p.z,dist=Math.hypot(dx,dz),yaw=Math.atan2(-dx,-dz),pitch=Math.atan2(eye(e)-eye(p)-.2,dist);return {e,dist,yaw,pitch,visible:wallDistance({x:p.x,y:eye(p),z:p.z},direction(yaw,pitch),boxes)>dist-.3&&!smokeBlocks({x:p.x,y:eye(p),z:p.z},{x:e.x,y:eye(e),z:e.z},r.smokes,time)};}).sort((a,b)=>(a.visible?-100:0)+a.dist-((b.visible?-100:0)+b.dist));
  const target=targets[0];let yaw=p.yaw,pitch=0,fire=false,x=0,z=0,interact=false,sprint=false;
  let goal;
  if(r.mode==='bomb'&&r.bomb){const b=r.bomb;if(b.state==='planted'){goal={x:b.x+(p.team==='orange'?ai.lane*6:0),z:b.z+(p.team==='orange'?-6:0)};if(p.team==='blue'&&Math.hypot(p.x-b.x,p.z-b.z)<1.6)interact=true;}
