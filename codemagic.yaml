@@ -51,7 +51,9 @@ workflows:
       - name: Version and signing
         script: |
           cd ios/App
-          agvtool new-version -all $(( ${PROJECT_BUILD_NUMBER:-1} + 1 ))
+          build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
+          if [ "$build_number" -lt 19 ]; then build_number=19; fi
+          agvtool new-version -all "$build_number"
           cd ../..
           xcode-project use-profiles
       - name: Build signed IPA
@@ -83,7 +85,9 @@ workflows:
       - name: Version and signing
         script: |
           cd ios/App
-          agvtool new-version -all $(( ${PROJECT_BUILD_NUMBER:-1} + 1 ))
+          build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
+          if [ "$build_number" -lt 19 ]; then build_number=19; fi
+          agvtool new-version -all "$build_number"
           cd ../..
           xcode-project use-profiles
       - name: Build signed IPA
