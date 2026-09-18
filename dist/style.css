@@ -11,3 +11,10 @@
 #objective{position:absolute;bottom:160px;left:50%;transform:translateX(-50%);padding:14px 20px;background:#101a20dd;color:#ffd685;font-size:13px;text-align:center;max-width:80vw}#objective>div{height:4px;background:#ffffff20;margin-top:9px}#objectiveProgress{display:block;height:100%;background:#ffcb70;width:0}#spectatorHelp{position:absolute;bottom:105px;left:50%;transform:translateX(-50%);background:#11222ade;padding:13px;color:#bfe8ff;font-size:12px;white-space:nowrap}#grenadeHud{position:absolute;right:35px;bottom:185px;color:#dbdfc0;font-size:12px}#grenadeHud b{margin-left:10px}
 
 #hud.spectating .bottom-hud,#hud.spectating #economy,#hud.spectating #grenadeHud{display:none}#hud.spectating #spectatorHelp{bottom:65px;font-size:13px}
+
+#scope{position:absolute;left:50%;top:50%;width:min(86vmin,820px);aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid #111;border-radius:50%;box-shadow:0 0 0 100vmax #020405f7,inset 0 0 45px #000b;z-index:3;color:#d9f65b;font:700 11px Barlow,Arial,sans-serif;letter-spacing:1.8px;text-align:center;padding-top:18px}
+#scope:before,#scope:after{content:'';position:absolute;background:#111;opacity:.9}
+#scope:before{width:1px;height:100%;left:50%;top:0}
+#scope:after{height:1px;width:100%;left:0;top:50%}
+#scope[data-level="2"]{border-color:#050505;box-shadow:0 0 0 100vmax #010202,inset 0 0 70px #000}
+#scope:not([hidden])~#crosshair{display:none}

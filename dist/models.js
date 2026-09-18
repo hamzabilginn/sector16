@@ -93,4 +93,17 @@ export function animateReload(root,type,progress,click=()=>{}){
  if(active){if(rig.lastProgress===null||progress<rig.lastProgress)rig.lastPhase=-1;if(pose.phase!==rig.lastPhase){if(pose.phase>0)click();rig.lastPhase=pose.phase;}rig.lastProgress=progress;}else{rig.lastProgress=null;rig.lastPhase=-1;}
 }
 
+export function animateShot(root,type,elapsed){
+ const rig=root.userData.rig;if(!rig||elapsed<0)return;
+ const duration=type==='awp'?.72:(type==='shotgun'?.42:.18);if(elapsed>=duration)return;
+ const snap=Math.exp(-elapsed*18)*Math.sin(elapsed*42),cycle=type==='awp'?Math.sin(Math.min(1,elapsed/duration)*Math.PI):0;
+ root.position.z+=Math.max(0,snap)*(type==='awp'?.16:type==='shotgun'?.11:.045);
+ root.rotation.x+=Math.max(0,snap)*(type==='awp'?.15:.07);
+ if(type==='awp'){
+  rig.bolt.position.z=-.07+cycle*.095;rig.bolt.rotation.y=cycle*.55;
+  rig.support.position.copy(rig.rest).add(new THREE.Vector3(-cycle*.018,cycle*.018,cycle*.04));
+  positionArm(rig.arm,rig.elbow,rig.support.position);
+ }
+}
+
 export function animateThrow(root,t){const rig=root.userData.rig;if(!rig||t<0||t>=1)return;const reach=Math.sin(t*Math.PI);root.position.y-=reach*.15;root.rotation.x-=reach*.18;rig.support.position.lerp(new THREE.Vector3(-.09,.02,-.57),reach);positionArm(rig.arm,rig.elbow,rig.support.position);}
