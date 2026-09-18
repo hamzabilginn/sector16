@@ -26,7 +26,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(APP_ORIGINS.has(req.headers.origin)){res.setHeader('Access-Control-Allow-Origin',req.headers.origin);res.setHeader('Vary','Origin');}
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','SAMEORIGIN');
  res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self' 'sha256-${importMapHash}'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'`);
- if(url.pathname==='/api/health')return json(res,200,{ok:true,game:'Sector 16',version:'2.0.2',rooms:rooms.size,players:[...peers].filter(p=>p.room).length,tickRate:60});
+ if(url.pathname==='/api/health')return json(res,200,{ok:true,game:'Sector 16',version:'2.0.3',rooms:rooms.size,players:[...peers].filter(p=>p.room).length,tickRate:60});
  if(url.pathname==='/api/rooms')return json(res,200,roomList());
  if(!['GET','HEAD'].includes(req.method))return json(res,405,{error:'Method not allowed'});
  const relative=url.pathname==='/'?'dist/index.html':url.pathname.startsWith('/shared/')?url.pathname.slice(1):'dist/'+decodeURIComponent(url.pathname.slice(1));
