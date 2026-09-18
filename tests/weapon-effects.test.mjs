@@ -10,9 +10,9 @@ test('AWP dürbünü iki kademeden sonra normal görüşe döner',()=>{
 
 test('AWP ikinci kademe daha dar görüş açısı kullanır',()=>{
  assert.equal(zoomFov(85,'awp',0),85);
- assert.equal(zoomFov(85,'awp',1),30);
- assert.equal(zoomFov(85,'awp',2),12);
- assert.match(zoomLabel('awp',2),/2\. KADEME/);
+ assert.ok(Math.abs(Math.tan(85*Math.PI/360)/Math.tan(zoomFov(85,'awp',1)*Math.PI/360)-4)<1e-10);
+ assert.ok(Math.abs(Math.tan(85*Math.PI/360)/Math.tan(zoomFov(85,'awp',2)*Math.PI/360)-8)<1e-10);
+ assert.match(zoomLabel('awp',2),/8×/);
 });
 
 test('silahların atış karakterleri ayrıdır',()=>{

@@ -9,5 +9,5 @@ export const SHOT_PROFILES={
 
 export function shotProfile(weapon){return SHOT_PROFILES[weapon]||SHOT_PROFILES.rifle}
 export function nextZoomLevel(weapon,current=0){return weapon==='awp'?(Number(current)+1)%3:Number(current)>0?0:1}
-export function zoomFov(base,weapon,level){if(!level)return base;if(weapon==='awp')return level===2?12:30;return base*.74}
-export function zoomLabel(weapon,level){return weapon==='awp'&&level?`${level}. KADEME · ${level===2?'12°':'30°'}`:''}
+export function zoomFov(base,weapon,level){if(!level)return base;if(weapon==='awp')return 2*Math.atan(Math.tan(base*Math.PI/360)/(level===2?8:4))*180/Math.PI;return base*.74}
+export function zoomLabel(weapon,level){return weapon==='awp'&&level?`${level===2?'8×':'4×'} · AWP`:''}
