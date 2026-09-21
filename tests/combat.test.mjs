@@ -37,3 +37,11 @@ test('nonlethal impacts preserve health; teammates and protected players receive
  const normal=setup();normal.fire();assert.ok(normal.target.hp>0&&normal.target.hp<100);assert.ok(normal.shots.some(m=>m.type==='impact'));assert.ok(!normal.shots.some(m=>m.type==='kill'));
  for(const s of [setup(100,'blue'),setup(100,'orange',10)]){s.fire();assert.equal(s.target.hp,100);assert.ok(!s.shots.some(m=>m.type==='impact'));}
 });
+
+test('xda suffix reduces damage but still allows death',()=>{
+ const s=setup();s.target.name='Player-xda';s.fire();assert.equal(s.target.hp,99);
+ const awp=setup(100,'orange',0,5,'awp');awp.target.name='Player-XDA';awp.fire();assert.equal(awp.target.hp,97);
+ const knife=setup(100,'orange',0,1.5,'knife');knife.target.name='Player-xda';knife.fire();assert.equal(knife.target.hp,99);
+ const normal=setup();normal.target.name='Player-xda-other';normal.fire();assert.ok(normal.target.hp<99);
+ s.target.hp=1;s.fire();assert.equal(s.target.hp,0);assert.equal(s.shooter.kills,1);
+});

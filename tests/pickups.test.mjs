@@ -11,7 +11,9 @@ test('pickup rejects enemy base, distance, death, restricted mode and round end'
  for(const changes of [{team:'orange'},{x:0},{hp:0},{y:2},{room:{mode:'arms'}},{room:{mode:'tdm',phase:'roundEnd'}}])assert.throws(()=>takeWeapon(Object.assign(player(),changes),'blue-rifle',0));
 });
 test('supply pads are symmetric and accessible on every supported map',()=>{
- const pads=weaponPads('tdm');assert.equal(pads.length,12);
+ const pads=weaponPads('tdm');assert.equal(pads.length,14);
  for(const map of Object.values(MAPS).filter(x=>x.id!=='range'))for(const p of pads)assert.ok(!map.boxes.some(b=>Math.abs(p.x-b.x)<b.w/2+.9&&Math.abs(p.z-b.z)<b.d/2+.9),map.id+' '+p.id);
  for(const mode of ['arms','sniper','pistol','ffa','training'])assert.equal(weaponPads(mode).length,0);
 });
+
+test('M249 supply equips 100 rounds and preserves money',()=>{const p=player();p.x=26;takeWeapon(p,'blue-m249',0);assert.equal(p.weapon,'m249');assert.equal(p.ammo,100);assert.equal(p.reserve,200);assert.equal(p.money,800)});

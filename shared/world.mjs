@@ -21,6 +21,7 @@ const DOCK_BOXES=[
 ];
 export const SPAWNS={blue:[[-20,27],[-12,27],[-4,30],[8,28],[20,27]],orange:[[20,-27],[12,-27],[4,-30],[-8,-28],[-20,-27]]};
 export const WEAPONS={
+ m249:{name:'M249 · 5-1',price:5750,slot:'primary',mag:100,reserve:200,damage:32,head:96,interval:.085,reload:4.5,spread:.009,kick:.024},
  knife:{name:'Taktik Bıçak',price:0,slot:'melee',mag:1,reserve:0,damage:55,head:55,interval:.30,reload:0,spread:0,kick:0,range:2.15,melee:true},
  pistol:{name:'Glock 18',price:0,slot:'secondary',mag:20,reserve:120,damage:26,head:78,interval:.20,reload:1.5,spread:.006,kick:.016},
  deagle:{name:'Desert Eagle',price:700,slot:'secondary',mag:7,reserve:35,damage:52,head:130,interval:.34,reload:1.9,spread:.004,kick:.05},

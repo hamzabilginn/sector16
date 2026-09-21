@@ -26,6 +26,7 @@ export function pickupVisuals(scene,{send,touchDevice}){
    piece(gun,.05,.05,sniper?.75:pistol?.18:.42,0,.02,sniper?-.66:pistol?-.27:-.48);
    if(!pistol){piece(gun,.12,.15,short?.22:.38,0,0,.46,accent);piece(gun,.13,.11,.28,0,0,-.38,accent);for(let i=0;i<5;i++)piece(gun,.15,.03,.025,0,.09,-.28-i*.045);}
    if(sniper){piece(gun,.08,.08,.10,0,.15,0);const scope=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.38,12),metal.clone());scope.rotation.x=Math.PI/2;scope.position.set(0,.22,-.12);gun.add(scope);}
+   if(p.weapon==='m249'){piece(gun,.26,.26,.24,-.04,-.18,-.08,accent);piece(gun,.18,.06,.50,0,.14,-.12);}
    if(p.weapon==='m4')piece(gun,.075,.075,.23,0,.02,-.76);
    if(p.weapon==='shotgun')piece(gun,.06,.06,.5,0,-.07,-.44,accent);
    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;const ctx=canvas.getContext('2d');ctx.fillStyle='#0b141de6';ctx.fillRect(0,0,512,96);ctx.fillStyle=p.team==='blue'?'#59caff':'#ffab64';ctx.font='bold 34px Arial';ctx.textAlign='center';ctx.fillText(WEAPONS[p.weapon].name,256,40);ctx.font='20px Arial';ctx.fillStyle='#fff';ctx.fillText('TAKIM İKMALİ · ÜCRETSİZ',256,76);

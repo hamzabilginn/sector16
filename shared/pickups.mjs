@@ -1,9 +1,9 @@
 import {WEAPONS,inOwnBase} from './world.mjs';
 
-const arsenal=['smg','rifle','m4','awp','shotgun','deagle'];
+const arsenal=['smg','rifle','m4','awp','shotgun','deagle','m249'];
 export function weaponPads(mode){
  if(['training','arms','sniper','pistol','ffa'].includes(mode))return [];
- return ['blue','orange'].flatMap(team=>arsenal.map((weapon,i)=>({id:team+'-'+weapon,team,weapon,x:-20+i*8,z:team==='blue'?30:-30,y:0})));
+ return ['blue','orange'].flatMap(team=>arsenal.map((weapon,i)=>({id:team+'-'+weapon,team,weapon,x:i===6?26:-20+i*8,z:team==='blue'?30:-30,y:0})));
 }
 export function takeWeapon(p,id,now){
  const r=p.room,pad=weaponPads(r?.mode).find(x=>x.id===id);

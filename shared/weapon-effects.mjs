@@ -1,4 +1,5 @@
 export const SHOT_PROFILES={
+ m249:{volume:.22,duration:.23,cutoff:2100,boom:85,flash:3,kick:.095,tracer:.08},
  rifle:{volume:.18,duration:.20,cutoff:2500,boom:105,flash:2.4,kick:.085,tracer:.07},
  m4:{volume:.13,duration:.15,cutoff:1550,boom:125,flash:1.5,kick:.065,tracer:.06},
  shotgun:{volume:.24,duration:.34,cutoff:1250,boom:72,flash:3.2,kick:.14,tracer:.10},

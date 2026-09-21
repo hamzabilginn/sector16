@@ -13,7 +13,7 @@ test('live server: bot counts, difficulty, joins, leaves, validation, modes',asy
  const send=(c,m)=>c.ws.send(JSON.stringify(m));
  try{
   await Promise.race([once(server.stdout,'data'),new Promise((_,reject)=>setTimeout(()=>reject(Error('startup timeout')),5000).unref())]);
-  const health=await fetch(`http://127.0.0.1:${port}/api/health`).then(r=>r.json());assert.equal(health.version,'2.0.4');
+  const health=await fetch(`http://127.0.0.1:${port}/api/health`).then(r=>r.json());assert.equal(health.version,'2.0.5');
   const a=await client();send(a,{type:'create',name:'Test Arena',nickname:'Tester',maxPlayers:8,botCount:7,botDifficulty:'hard',mode:'tdm',team:'orange'});
   const joined=await wait(a,m=>m.type==='joined');assert.equal(joined.team,'orange');let state=await wait(a,m=>m.type==='state'&&m.players.length===8);
   assert.equal(state.players.filter(p=>p.bot).length,7);assert.equal(new Set(state.players.map(p=>p.name)).size,8);

@@ -72,6 +72,7 @@ export function buildViewWeapon(root,type){
  box(root,rubber,.023,.034,.025,0,.10,-.19);box(root,rubber,.018,.035,.012,0,.094,pistol?-.23:-.43);
  if(type==='awp'){const scope=tube(root,metal,.037,.28,0,.145,-.11);scope.rotation.x=Math.PI/2;box(root,metal,.033,.08,.05,0,.09,-.08);}
  if(type==='m4'){const suppressor=tube(root,metal,.025,.15,0,.018,muzzle);suppressor.rotation.x=Math.PI/2;}
+ if(type==='m249'){box(root,wood,.16,.15,.18,-.025,-.13,-.10);box(root,metal,.11,.035,.35,0,.105,-.15);for(const side of [-1,1])box(root,metal,.013,.16,.018,side*.055,-.09,-.52).rotation.z=side*.3;}
  const magazine=joint(root,0,pistol?-.17:-.13,pistol?.039:-.12);
  if(!shotgun){box(magazine,type==='rifle'?wood:metal,pistol?.045:.054,pistol?.10:type==='awp'?.10:.19,pistol?.05:.075).rotation.x=pistol?-.20:.12;for(let i=0;i<4;i++)box(magazine,rubber,.056,.005,.08,0,-.065+i*.03,0);}
  else{magazine.visible=false;const tubeMag=tube(root,metal,.022,.34,0,-.034,-.35);tubeMag.rotation.x=Math.PI/2;}

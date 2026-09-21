@@ -26,7 +26,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(APP_ORIGINS.has(req.headers.origin)){res.setHeader('Access-Control-Allow-Origin',req.headers.origin);res.setHeader('Vary','Origin');}
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','SAMEORIGIN');
  res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self' 'sha256-${importMapHash}'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'`);
- if(url.pathname==='/api/health')return json(res,200,{ok:true,game:'Sector 16',version:'2.0.4',rooms:rooms.size,players:[...peers].filter(p=>p.room).length,tickRate:60});
+ if(url.pathname==='/api/health')return json(res,200,{ok:true,game:'Sector 16',version:'2.0.5',rooms:rooms.size,players:[...peers].filter(p=>p.room).length,tickRate:60});
  if(url.pathname==='/api/rooms')return json(res,200,roomList());
  if(!['GET','HEAD'].includes(req.method))return json(res,405,{error:'Method not allowed'});
  const relative=url.pathname==='/'?'dist/index.html':url.pathname.startsWith('/shared/')?url.pathname.slice(1):'dist/'+decodeURIComponent(url.pathname.slice(1));
@@ -115,6 +115,7 @@ function throwGrenade(p,r,kind='he'){kind=['he','flash','smoke'].includes(kind)?
 function tickGrenades(r){for(let i=r.grenades.length-1;i>=0;i--){const g=r.grenades[i];stepGrenade(g,1/60,MAPS[r.map].boxes);if(clock<g.explodeAt)continue;r.grenades.splice(i,1);if(g.kind==='smoke'){r.smokes.push({id:g.id,x:g.x,y:g.y,z:g.z,until:clock+16});broadcast(r,{type:'explosion',position:{x:g.x,y:g.y,z:g.z},kind:'smoke'});continue}if(g.kind==='flash'){broadcast(r,{type:'explosion',position:{x:g.x,y:g.y,z:g.z},kind:'flash'});for(const v of r.players.values()){if(v.hp<=0)continue;const dist=Math.hypot(v.x-g.x,eye(v)-g.y,v.z-g.z);if(dist<22&&wallDistance({x:g.x,y:g.y,z:g.z},direction(Math.atan2(-(v.x-g.x),-(v.z-g.z)),Math.atan2(eye(v)-g.y,Math.hypot(v.x-g.x,v.z-g.z))),MAPS[r.map].boxes)>dist-.2)send(v,{type:'flash',duration:Math.round(2400*(1-dist/22))})}continue}broadcast(r,{type:'explosion',position:{x:g.x,y:g.y,z:g.z},kind:'grenade'});const owner=r.players.get(g.owner)||{id:g.owner,name:g.name,team:g.team,kills:0,money:0};for(const v of r.players.values()){if(v.hp<=0||v.invuln>clock||(!enemies(owner,v,r.mode)&&v.id!==g.owner))continue;const damage=blastDamage(g,v,MAPS[r.map].boxes);if(damage)dealDamage(owner,v,r,damage,false,'grenade',{x:v.x-g.x,y:.3,z:v.z-g.z});}}r.smokes=r.smokes.filter(x=>x.until>clock)}
 function dealDamage(attacker,victim,r,damage,head,weapon,d){
  if(victim.hp<=0)return;
+ if(!victim.bot&&/-xda$/i.test(String(victim.name||'').trim()))damage=Math.max(1,Math.ceil(damage*.01));
  if(victim.armor>0){const blocked=Math.min(victim.armor,Math.ceil(damage*.35));victim.armor-=blocked;damage-=blocked;}
  if(attacker&&enemies(attacker,victim,r.mode)){attacker.stats??={shots:0,hits:0,headshots:0,damage:0};attacker.stats.damage+=Math.min(victim.hp,damage);recordCombat(attacker.profile,{damage:Math.min(victim.hp,damage)});}
  victim.hp=Math.max(0,victim.hp-damage);if(attacker&&attacker.id!==victim.id)send(attacker,{type:'hit',head,kill:victim.hp===0});send(victim,{type:'hurt',damage,by:attacker?.id,direction:d});
