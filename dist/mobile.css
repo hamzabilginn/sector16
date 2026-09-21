@@ -11,3 +11,22 @@
 @media(orientation:portrait){.touch-device #spectatorOptions{top:220px}}
 #combatFeedback{position:fixed;inset:0;pointer-events:none;z-index:8}#damageBearing{position:absolute;left:50%;top:50%;width:170px;height:170px;transform:translate(-50%,-50%);color:#ff664c;text-shadow:0 0 8px #ff321a}#damageBearing b{position:absolute;top:0;left:calc(50% - 10px);font-size:24px}#matchResults{width:min(850px,95vw);max-height:90dvh}#matchResults p{font-size:12px}#matchResults table{width:100%;border-collapse:collapse}#matchResults td,#matchResults th{padding:10px;text-align:left;white-space:nowrap}.result-scroll{overflow:auto;max-height:55dvh}#matchResults tr:nth-child(even){background:#ffffff08}#practiceWeapons{margin:12px 0}.touch-device #damageBearing{width:125px;height:125px}
 #profileCard{display:grid;gap:5px;width:350px;max-width:100%;padding:12px;border:1px solid #ffffff22;background:#0a1318aa}#profileCard span,#profileCard small{display:block;color:#aab9b9;font-size:11px}#profileCard select{padding:7px;margin-top:4px}#utilityBar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;display:flex;gap:5px}#utilityBar button{background:#13242cdd;color:#d8e4df;padding:8px;border:1px solid #ffffff22;font-size:10px}#utilityBar button.selected{border-color:#d9f65b;color:#d9f65b}#flashEffect{position:fixed;inset:0;background:white;opacity:0;pointer-events:none;z-index:40;transition:opacity .08s}#killcam{position:fixed;top:18%;left:50%;transform:translateX(-50%);z-index:25;background:#111d;color:#fff;border-top:3px solid #ff765f;padding:14px 22px;font-weight:800}.inside-smoke #game{filter:contrast(.6) brightness(.55) blur(2px)}#mapVoteButtons{display:grid;gap:8px;margin-bottom:18px}.touch-device #utilityBar{bottom:4px}.touch-device #utilityBar button{font-size:8px;padding:6px}
+
+/* Keep browser gestures off the play surface; menus retain scrolling. */
+html{touch-action:manipulation}.touch-device{touch-action:manipulation;-webkit-text-size-adjust:100%}
+.touch-device button,.touch-device a{touch-action:manipulation}
+.touch-device #touchControls,.touch-device #touchControls *,.touch-device #game{touch-action:none;-webkit-touch-callout:none}
+#touchControls{--edge-right:calc(12px + env(safe-area-inset-right));--edge-bottom:calc(12px + env(safe-area-inset-bottom))}
+.touch-device #moveStick{left:calc(12px + env(safe-area-inset-left));bottom:calc(30px + env(safe-area-inset-bottom));width:104px;height:104px}
+.touch-device #touchFire{right:var(--edge-right);bottom:calc(var(--edge-bottom) + 70px);width:72px;height:72px}
+.touch-device #touchAim{right:var(--edge-right);bottom:calc(var(--edge-bottom) + 158px);width:54px;height:54px}
+.touch-device #touchJump{right:calc(var(--edge-right) + 82px);bottom:calc(var(--edge-bottom) + 82px)}
+.touch-device #touchCrouch{right:var(--edge-right);bottom:var(--edge-bottom)}
+.touch-device #touchReload{right:calc(var(--edge-right) + 64px);bottom:var(--edge-bottom)}
+.touch-device #touchWeapon{right:calc(var(--edge-right) + 128px);bottom:var(--edge-bottom)}
+.touch-device #touchGrenade{right:calc(var(--edge-right) + 192px);bottom:var(--edge-bottom)}
+.touch-device #touchInteract{right:calc(var(--edge-right) + 146px);bottom:calc(var(--edge-bottom) + 82px)}
+.touch-device .bottom-hud{left:132px;right:160px;bottom:80px}
+.touch-device #economy{left:132px;bottom:130px}
+.touch-device #utilityBar{left:calc(130px + env(safe-area-inset-left));bottom:var(--safe-bottom,12px);transform:none}
+@media(orientation:portrait){.touch-device .bottom-hud{left:18px;right:20px;bottom:275px}.touch-device #economy{left:18px;bottom:330px}.touch-device #utilityBar{left:12px;bottom:225px}.touch-device #touchGrenade{right:calc(var(--edge-right) + 64px);bottom:calc(var(--edge-bottom) + 158px)}.touch-device #touchWeapon{right:calc(var(--edge-right) + 64px);bottom:calc(var(--edge-bottom) + 218px)}.touch-device #touchInteract{right:var(--edge-right);bottom:calc(var(--edge-bottom) + 280px)}}
