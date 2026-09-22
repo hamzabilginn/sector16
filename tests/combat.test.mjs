@@ -1,3 +1,5 @@
+import {weaponStats} from '../shared/attachments.mjs';
+import {surfaceImpact} from '../shared/combat-feedback.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -12,7 +14,7 @@ function setup(hp=100,team='orange',invuln=0,distance=5,weapon='pistol',boxes=[]
  const shooter={...freshBody(0,0,0),id:'shooter',team:'blue',weapon,ammo:w.mag,inventory:{[weapon]:{ammo:w.mag,reserve:w.reserve}},input:{aim:true},kills:0,money:800,bot:true};
  const target={...freshBody(0,-distance,0),id:'victim',name:'Target',team,hp,armor:0,invuln,generation:1,deaths:0};
  const room={map:'test',mode:'tdm',players:new Map([[shooter.id,shooter],[target.id,target]]),scores:{blue:0,orange:0}};
- const context=vm.createContext({WEAPONS,eye,height,direction,wallDistance,playerHit,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,MAPS:{test:{boxes}},clock:5,Math:Object.assign(Object.create(Math),{random:()=>.5}),send:(p,m)=>messages.push({id:p.id,...m}),broadcast:(r,m)=>shots.push(m),isRoundMode,dropObjectives:()=>{}});
+ const context=vm.createContext({weaponStats,surfaceImpact,WEAPONS,eye,height,direction,wallDistance,playerHit,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,enemies,smokeBlocks,modeLoadout,recordCombat:()=>{},publicProfile:()=>null,MAPS:{test:{boxes}},clock:5,Math:Object.assign(Object.create(Math),{random:()=>.5}),send:(p,m)=>messages.push({id:p.id,...m}),broadcast:(r,m)=>shots.push(m),isRoundMode,dropObjectives:()=>{}});
  vm.runInContext(fireSource+'\nthis.fire=fire;',context);
  return {shooter,target,room,shots,messages,fire:()=>context.fire(shooter,room)};
 }

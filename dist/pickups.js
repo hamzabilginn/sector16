@@ -9,8 +9,8 @@ export function pickupVisuals(scene,{send,touchDevice}){
  button.onclick=()=>{if(nearest&&performance.now()-lastRequest>700){lastRequest=performance.now();send({type:'pickup',id:nearest.id})}};
  document.addEventListener('keydown',e=>{if(e.code==='KeyF'&&!e.repeat&&!button.hidden&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();button.click()}});
  function clear(){root.traverse(o=>{o.geometry?.dispose();if(o.material){o.material.map?.dispose();o.material.dispose()}});root.clear();pads=[];nearest=null;button.hidden=true}
- function build(mode){
-  clear();pads=weaponPads(mode).map(p=>{
+ function build(mode,map){
+  clear();pads=weaponPads(mode,map).map(p=>{
    const group=new THREE.Group();group.position.set(p.x,0,p.z);root.add(group);
    const color=p.team==='blue'?0x59caff:0xffab64;
    const metal=new THREE.MeshStandardMaterial({color:0x28323b,metalness:.8,roughness:.28});
@@ -36,7 +36,7 @@ export function pickupVisuals(scene,{send,touchDevice}){
  }
  return {
   update(state,body,active,now){
-   const next=state?state.map+':'+state.mode:'';if(next!==signature){signature=next;if(state)build(state.mode);else clear()}
+   const next=state?state.map+':'+state.mode:'';if(next!==signature){signature=next;if(state)build(state.mode,state.map);else clear()}
    root.visible=!!state;nearest=null;let distance=2.2;
    for(const p of pads){p.gun.position.y=.65+Math.sin(now*.002+p.x)*.10;p.gun.rotation.set(.08,now*.0005,Math.sin(now*.0015)*.07);p.ring.material.opacity=.55+Math.sin(now*.004)*.2;p.label.visible=!!body&&Math.hypot(body.x-p.x,body.z-p.z)<13;
     const d=body?Math.hypot(body.x-p.x,body.z-p.z):Infinity;

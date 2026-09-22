@@ -1,3 +1,4 @@
+import {CITY} from './city.mjs';
 export const ARENA={width:56,depth:64,name:'DOKLAR'};
 // All coordinates and collision geometry are shared by server and renderer.
 const DOCK_BOXES=[
@@ -48,6 +49,7 @@ const desert=[...boundary,
  wall(-25,17,2,4,1.2,'crate'),wall(25,-12,2,4,1.2,'crate')];
 const refinery=[...boundary,wall(0,0,8,18,6,'building'),wall(-18,-12,10,4,3,'container'),wall(18,12,10,4,3,'container'),wall(-18,15,4,12,4,'building'),wall(18,-15,4,12,4,'building'),wall(-7,-22,5,3,1.4,'crate'),wall(7,22,5,3,1.4,'crate'),wall(-22,2,3,7,2,'barrier'),wall(22,-2,3,7,2,'barrier')];
 export const MAPS={
+ city:CITY,
  range:{id:'range',name:'Antrenman Alanı',boxes:[...boundary],spawns:{blue:[[0,27]],orange:[[-16,-8],[-8,-8],[0,-8],[8,-8],[16,-8]]},sky:0x91a8ae,floor:0x6d766c},
  docks:{id:'docks',name:'Doklar',description:'Endüstriyel liman',boxes:DOCK_BOXES,spawns:SPAWNS,floor:0x696f6a,sky:0x809297},
  iceworld:{id:'iceworld',name:'Buz Arenası',description:'Iceworld esintili · Dört blok, hızlı çatışma',boxes:ice,spawns:SPAWNS,floor:0xc2dce3,sky:0xabcddd},
@@ -55,9 +57,14 @@ export const MAPS={
  ,refinery:{id:'refinery',name:'Rafineri',description:'Yakın ve orta menzil çatışma',boxes:refinery,spawns:SPAWNS,floor:0x596064,sky:0x87939a}
 };
 export let BOXES=DOCK_BOXES;
-export function setActiveMap(id){BOXES=(MAPS[id]||MAPS.docks).boxes}
+export let ACTIVE_MAP='docks';
+export function mapBounds(id=ACTIVE_MAP){const m=MAPS[id]||MAPS.docks;return {x:(m.width||56)/2,z:(m.depth||64)/2}}
+export function baseZone(id='docks'){const m=MAPS[id]||MAPS.docks;return {z:m.baseZ||28,halfWidth:m.baseHalfWidth||27.65,depth:m.baseDepth||8}}
+const boundsByBoxes=new WeakMap();
+function boundsFor(boxes){if(!boundsByBoxes.has(boxes)){const m=Object.values(MAPS).find(m=>m.boxes===boxes);boundsByBoxes.set(boxes,mapBounds(m?.id||'docks'))}return boundsByBoxes.get(boxes)}
+export function setActiveMap(id){ACTIVE_MAP=Object.hasOwn(MAPS,id)?id:'docks';BOXES=MAPS[ACTIVE_MAP].boxes}
 export const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
-export function inOwnBase(p){return Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z)&&Math.abs(p.x)<=27.65&&p.y>=0&&p.y<=2.5&&(p.team==='blue'?p.z>=24&&p.z<=31.65:p.team==='orange'?p.z<=-24&&p.z>=-31.65:false)}
+export function inOwnBase(p){const b=baseZone(p.room?.map||p.map||'docks'),sign=p.team==='blue'?1:p.team==='orange'?-1:0;return !!sign&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z)&&Math.abs(p.x)<=b.halfWidth&&p.y>=0&&p.y<=2.5&&Math.abs(p.z-sign*b.z)<=b.depth/2-.35}
 export function direction(yaw,pitch){return {x:-Math.sin(yaw)*Math.cos(pitch),y:Math.sin(pitch),z:-Math.cos(yaw)*Math.cos(pitch)}}
 export function freshBody(x=0,z=25,yaw=0){return {x,y:0,z,vx:0,vy:0,vz:0,yaw,pitch:0,ground:true,crouch:false,jumpHeld:false}}
 export function height(p){return p.crouch?1.12:1.78}
@@ -73,15 +80,17 @@ export function simulate(p,i,dt=1/60,boxes=BOXES){
  const tx=(Math.cos(p.yaw)*sx+Math.sin(p.yaw)*sz)*speed,tz=(-Math.sin(p.yaw)*sx+Math.cos(p.yaw)*sz)*speed;
  const accel=p.ground?1-Math.exp(-18*dt):1-Math.exp(-4.5*dt);p.vx+=(tx-p.vx)*accel;p.vz+=(tz-p.vz)*accel;
  if(i.jump&&!p.jumpHeld&&p.ground){p.vy=6.3;p.ground=false}p.jumpHeld=!!i.jump;
- let nx=p.x+p.vx*dt;if(!blockedAt(p,nx,p.z,boxes))p.x=nx;else p.vx=0;
- let nz=p.z+p.vz*dt;if(!blockedAt(p,p.x,nz,boxes))p.z=nz;else p.vz=0;
+ // Walk up shallow stairs without jumping; never step through an overhead slab.
+ const step=(x,z)=>{if(!p.ground)return false;const candidates=boxes.filter(b=>x+.34>b.x-b.w/2&&x-.34<b.x+b.w/2&&z+.34>b.z-b.d/2&&z-.34<b.z+b.d/2);const tops=candidates.map(b=>b.y+b.h/2).filter(y=>y>p.y+.001&&y<=p.y+.28);if(!tops.length)return false;const y=Math.max(...tops);if(blockedAt({...p,y},x,z,boxes))return false;p.y=y;return true;};
+ let nx=p.x+p.vx*dt;if(!blockedAt(p,nx,p.z,boxes)||step(nx,p.z))p.x=nx;else p.vx=0;
+ let nz=p.z+p.vz*dt;if(!blockedAt(p,p.x,nz,boxes)||step(p.x,nz))p.z=nz;else p.vz=0;
  const oldY=p.y;p.vy-=18*dt;p.y+=p.vy*dt;p.ground=false;
  for(const b of boxes){if(p.x+.33<=b.x-b.w/2||p.x-.33>=b.x+b.w/2||p.z+.33<=b.z-b.d/2||p.z-.33>=b.z+b.d/2)continue;
  const top=b.y+b.h/2,bottom=b.y-b.h/2;
  if(p.vy<=0&&oldY>=top-.02&&p.y<=top){p.y=top;p.vy=0;p.ground=true}
  else if(p.vy>0&&oldY+height(p)<=bottom+.02&&p.y+height(p)>=bottom){p.y=bottom-height(p);p.vy=0}}
- if(p.y<=0){p.y=0;p.vy=0;p.ground=true}p.x=clamp(p.x,-27.65,27.65);p.z=clamp(p.z,-31.65,31.65);return p;
+ if(p.y<=0){p.y=0;p.vy=0;p.ground=true}const bounds=boundsFor(boxes);p.x=clamp(p.x,-bounds.x+.35,bounds.x-.35);p.z=clamp(p.z,-bounds.z+.35,bounds.z-.35);return p;
 }
-export function rayBox(o,d,b){let near=0,far=120;for(const [a,size] of [['x','w'],['y','h'],['z','d']]){const min=b[a]-b[size]/2,max=b[a]+b[size]/2;if(Math.abs(d[a])<1e-8){if(o[a]<min||o[a]>max)return Infinity;continue}let t1=(min-o[a])/d[a],t2=(max-o[a])/d[a];if(t1>t2)[t1,t2]=[t2,t1];near=Math.max(near,t1);far=Math.min(far,t2);if(near>far)return Infinity}return far>=0?near:Infinity}
-export function wallDistance(o,d,boxes=BOXES){let n=100;for(const b of boxes)n=Math.min(n,rayBox(o,d,b));if(d.y<0)n=Math.min(n,-o.y/d.y);return n}
+export function rayBox(o,d,b){let near=0,far=250;for(const [a,size] of [['x','w'],['y','h'],['z','d']]){const min=b[a]-b[size]/2,max=b[a]+b[size]/2;if(Math.abs(d[a])<1e-8){if(o[a]<min||o[a]>max)return Infinity;continue}let t1=(min-o[a])/d[a],t2=(max-o[a])/d[a];if(t1>t2)[t1,t2]=[t2,t1];near=Math.max(near,t1);far=Math.min(far,t2);if(near>far)return Infinity}return far>=0?near:Infinity}
+export function wallDistance(o,d,boxes=BOXES){let n=220;for(const b of boxes)n=Math.min(n,rayBox(o,d,b));if(d.y<0)n=Math.min(n,-o.y/d.y);return n}
 export function playerHit(o,d,p,padding=0){const h=height(p);const head=rayBox(o,d,{x:p.x,y:p.y+h-.18,z:p.z,w:.42+padding,h:.38,d:.42+padding});const body=rayBox(o,d,{x:p.x,y:p.y+(h-.38)/2,z:p.z,w:.62+padding,h:h-.38,d:.52+padding});return head<body?{distance:head,head:true}:{distance:body,head:false}}

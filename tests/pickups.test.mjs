@@ -12,7 +12,7 @@ test('pickup rejects enemy base, distance, death, restricted mode and round end'
 });
 test('supply pads are symmetric and accessible on every supported map',()=>{
  const pads=weaponPads('tdm');assert.equal(pads.length,14);
- for(const map of Object.values(MAPS).filter(x=>x.id!=='range'))for(const p of pads)assert.ok(!map.boxes.some(b=>Math.abs(p.x-b.x)<b.w/2+.9&&Math.abs(p.z-b.z)<b.d/2+.9),map.id+' '+p.id);
+ for(const map of Object.values(MAPS).filter(x=>x.id!=='range'))for(const p of weaponPads('tdm',map.id))assert.ok(!map.boxes.some(b=>Math.abs(p.x-b.x)<b.w/2+.9&&Math.abs(p.z-b.z)<b.d/2+.9),map.id+' '+p.id);
  for(const mode of ['arms','sniper','pistol','ffa','training'])assert.equal(weaponPads(mode).length,0);
 });
 

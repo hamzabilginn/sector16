@@ -1,12 +1,12 @@
 import {MAPS,eye,direction,wallDistance,clamp} from '../shared/world.mjs';
 import {BOT_LEVELS,canBotFire} from '../shared/bots.mjs';
-import {BOMB_SITES} from '../shared/bomb.mjs';
+import {bombSites} from '../shared/bomb.mjs';
 import {pathTo} from './navigation.mjs';
 import {enemies,smokeBlocks} from '../shared/live-expansion.mjs';
 export const BOT_ROLES=['Hücum','Sol kanat','Sağ kanat','Destek','Savunma'];
 export function makeBrain(index){return {role:index%BOT_ROLES.length,lane:index%3-1,phase:Math.random()*Math.PI*2,nextPlan:0,path:[],nextDecision:0,holdUntil:0,patrol:0,seen:null,lastX:0,lastZ:0,stuck:0};}
 export function tacticalInput(p,r,time){
- const ai=p.ai??=makeBrain(p.botIndex||0),level=BOT_LEVELS[r.botDifficulty],boxes=MAPS[r.map].boxes;
+ const ai=p.ai??=makeBrain(p.botIndex||0),level=BOT_LEVELS[r.botDifficulty],boxes=MAPS[r.map].boxes,BOMB_SITES=bombSites(r.map),size=r.map==='city'?2:1;
  const foes=[...r.players.values()].filter(e=>enemies(p,e,r.mode)&&e.hp>0);const targets=foes.map(e=>{const dx=e.x-p.x,dz=e.z-p.z,dist=Math.hypot(dx,dz),yaw=Math.atan2(-dx,-dz),pitch=Math.atan2(eye(e)-eye(p)-.2,dist);return {e,dist,yaw,pitch,visible:wallDistance({x:p.x,y:eye(p),z:p.z},direction(yaw,pitch),boxes)>dist-.3&&!smokeBlocks({x:p.x,y:eye(p),z:p.z},{x:e.x,y:eye(e),z:e.z},r.smokes,time)};}).sort((a,b)=>(a.visible?-100:0)+a.dist-((b.visible?-100:0)+b.dist));
  const target=targets[0];let yaw=p.yaw,pitch=0,fire=false,x=0,z=0,interact=false,sprint=false;
  let goal;
@@ -15,8 +15,8 @@ export function tacticalInput(p,r,time){
  else if(p.team==='orange'&&b.state==='dropped')goal=b;
  else{const site=BOMB_SITES[ai.role%2];goal={x:site.x+ai.lane*2,z:site.z+(p.team==='blue'?-5:-9)};}}
  else if(r.mode==='ctf'){const own=r.flags[p.team],enemy=r.flags[p.team==='blue'?'orange':'blue'];goal=enemy.carrier===p.id?own:ai.role===4?own:enemy;}
- else if(time>ai.nextDecision){ai.nextDecision=time+3.5+(ai.phase%2);ai.patrol++;const sign=p.team==='blue'?1:-1;const lane=ai.role===1?-22:ai.role===2?22:ai.lane*14;
- ai.goal=ai.role===4?{x:lane,z:sign*(8+(ai.patrol%3)*6)}:ai.role===3?{x:lane,z:sign*(ai.patrol%2?6:-6)}:target?{x:ai.patrol%3===0?target.e.x:lane,z:ai.patrol%3===0?target.e.z:target.e.z*.55}:{x:lane,z:-sign*18};
+ else if(time>ai.nextDecision){ai.nextDecision=time+3.5+(ai.phase%2);ai.patrol++;const sign=p.team==='blue'?1:-1;const lane=(ai.role===1?-22:ai.role===2?22:ai.lane*14)*size;
+ ai.goal=ai.role===4?{x:lane,z:sign*(8+(ai.patrol%3)*6)*size}:ai.role===3?{x:lane,z:sign*(ai.patrol%2?6:-6)}:target?{x:ai.patrol%3===0?target.e.x:lane,z:ai.patrol%3===0?target.e.z:target.e.z*.55}:{x:lane,z:-sign*18};
  if(ai.role>=3)ai.holdUntil=time+.5+(ai.phase%1.5);
  }
  goal??=ai.goal||{x:ai.lane*20,z:0};

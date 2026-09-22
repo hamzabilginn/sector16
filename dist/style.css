@@ -18,3 +18,5 @@
 #scope:after{height:1px;width:100%;left:0;top:50%}
 #scope[data-level="2"]{border-color:#050505;box-shadow:0 0 0 100vmax #010202,inset 0 0 70px #000}
 #scope:not([hidden])~#crosshair{display:none}
+
+.attachment-pickup{bottom:34%;border-color:#80d4c5!important}#attachmentStatus{position:absolute;right:18px;bottom:100px;color:#a0decf;font-size:11px;letter-spacing:1px;pointer-events:none}@media(pointer:coarse){#attachmentStatus{right:10px;bottom:165px}.attachment-pickup{bottom:39%;max-width:50vw;font-size:12px}}

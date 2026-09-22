@@ -1,12 +1,12 @@
-import {WEAPONS,inOwnBase} from './world.mjs';
+import {WEAPONS,inOwnBase,baseZone} from './world.mjs';
 
 const arsenal=['smg','rifle','m4','awp','shotgun','deagle','m249'];
-export function weaponPads(mode){
+export function weaponPads(mode,map='docks'){
  if(['training','arms','sniper','pistol','ffa'].includes(mode))return [];
- return ['blue','orange'].flatMap(team=>arsenal.map((weapon,i)=>({id:team+'-'+weapon,team,weapon,x:i===6?26:-20+i*8,z:team==='blue'?30:-30,y:0})));
+ return ['blue','orange'].flatMap(team=>arsenal.map((weapon,i)=>({id:team+'-'+weapon,team,weapon,x:i===6?26:-20+i*8,z:(team==='blue'?1:-1)*(baseZone(map).z+2),y:0})));
 }
 export function takeWeapon(p,id,now){
- const r=p.room,pad=weaponPads(r?.mode).find(x=>x.id===id);
+ const r=p.room,pad=weaponPads(r?.mode,r?.map).find(x=>x.id===id);
  if(!r||!pad||pad.team!==p.team||p.hp<=0||!inOwnBase(p)||r.restart||['roundEnd','matchEnd'].includes(r.phase))throw Error('Silahı almak için kendi takımının alanında ve hayatta olmalısın.');
  if(Math.hypot(p.x-pad.x,p.z-pad.z)>2.2||p.y>1.2)throw Error('Silaha biraz daha yaklaş.');
  if(now<(p.pickupAt||0))throw Error('Tekrar silah almak için '+Math.ceil(p.pickupAt-now)+' saniye bekle.');
