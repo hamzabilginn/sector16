@@ -52,7 +52,7 @@ workflows:
         script: |
           cd ios/App
           build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
-          if [ "$build_number" -lt 20 ]; then build_number=20; fi
+          if [ "$build_number" -lt 21 ]; then build_number=21; fi
           agvtool new-version -all "$build_number"
           cd ../..
           xcode-project use-profiles
@@ -86,7 +86,7 @@ workflows:
         script: |
           cd ios/App
           build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
-          if [ "$build_number" -lt 20 ]; then build_number=20; fi
+          if [ "$build_number" -lt 21 ]; then build_number=21; fi
           agvtool new-version -all "$build_number"
           cd ../..
           xcode-project use-profiles
