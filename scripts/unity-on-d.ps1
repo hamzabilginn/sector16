@@ -37,6 +37,8 @@ $taskMethod = switch ($Mode) {
     'IOS' { 'Sector16.Editor.NativeBuild.IOS' }
 }
 $taskArguments += @('-batchmode','-quit','-executeMethod',$taskMethod)
+if ($Mode -eq 'IOS') { $taskArguments += @('-buildTarget','iOS') }
+if ($Mode -eq 'Windows') { $taskArguments += @('-buildTarget','Win64') }
 $taskProcess = Start-Process -FilePath $EditorPath -ArgumentList $taskArguments -WindowStyle Hidden -PassThru
 $taskProcess.WaitForExit()
 Write-Output "Unity $Mode exit: $($taskProcess.ExitCode). Log: $taskLog"

@@ -15,6 +15,9 @@ namespace Sector16.Editor
         public static void Prepare()
         {
             PlayerSettings.companyName="Webdehasi";PlayerSettings.productName="Sector 16";
+            var iconImporter=AssetImporter.GetAtPath("Assets/AppIcon.png") as TextureImporter;
+            if(iconImporter!=null&&(iconImporter.textureCompression!=TextureImporterCompression.Uncompressed||iconImporter.mipmapEnabled))
+            {iconImporter.textureCompression=TextureImporterCompression.Uncompressed;iconImporter.mipmapEnabled=false;iconImporter.SaveAndReimport();}
             var icon=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/AppIcon.png");
             if(icon!=null)PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown,new[]{icon},IconKind.Any);
             PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS,"com.webdehasi.sector16");
