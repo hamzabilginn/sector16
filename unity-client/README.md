@@ -19,15 +19,19 @@ Görseller mevcut geometrinin basit karşılıklarıdır. Tam görsel/animasyon/
 
 - 35 referans hareket senaryosu, 280 kontrol noktası: C# ve JavaScript tüm hareket alanlarında `1e-8` toleransı içinde eşleşir.
 - İki C# WebSocket istemcisi, ayrı yerel sunucuda aynı odaya katılır; birbirini, sunucunun onayladığı hareketi ve ateşi görür; ayrılma doğrulanır. Bu test Unity sahnesi veya gerçek tarayıcı ile fiziksel cihaz testi değildir.
-- C# 9 sözdizimi kontrolü geçti. Unity API derlemesi ayrıca gerekli.
+- C# 9 sözdizimi kontrolü ve Unity `6000.6.2f1` API derlemesi geçti.
+- Unity `NativeChecks.Run` geçti: JSON, harita/silah verileri, koordinat/nişan dönüşümü, aynı anda ateş ve kamera parmakları, pointer sahipliği, sıfırlama, ölüm ve duraklatma.
+- Windows native paketi oluşturuldu: `artifacts/unity-windows/Sector16.exe`. Sürüm `2.2.0`, build `1` yalnızca bu yerel önizleme içindir; App Store güncelleme numarası henüz seçilmedi.
 - Güncel kaynakların 45 oyun testi geçti; mevcut Capacitor mobil paket oluşturuldu; tarayıcı dokunma testleri geçti.
 - Codemagic YAML resmi JSON şemasıyla doğrulandı. Native iş akışı çalıştırılmadı.
 
-## Şu anki engel
+## Unity kurulumu ve kalan doğrulamalar
 
-Bu bilgisayarda Unity CLI ve Personal lisans kaydı var, ancak `6000.6.2f1` editör klasörü boş. Unity kurucusu ve Unity CLI ile kurulum `INSTALL_ERROR` / çıkış kodu 2 verdi. Bu yüzden native sahne derlemesi, `NativeChecks.Run`, Windows oyun paketi ve iOS dışa aktarımı henüz çalıştırılamadı. MSI arşiv çıkarma teşhis komutu otomatik onay denetimi tarafından engellendi; alternatif bir arşiv aracı kurulmadı.
+Unity `6000.6.2f1`, `D:\unity\6000.6.2f1\Editor\Unity.exe` yoluna başarıyla kuruldu (kurulum çıkış kodu 0). iOS Build Support da aynı editöre kuruldu. C: üzerinde yaklaşık 3,7 GB boş alan vardı; yükseltilmiş kurulum işleminin `TEMP` ve `TMP` klasörlerini D: sürücüsüne yönlendirmek kurulumun tamamlanmasını sağladı. Windows'un genel geçici dosya ayarları değiştirilmedi.
 
-Unity Hub'dan editör kurulumunu tamamlamak veya çalışan başka bir editörün yolunu belirlemek gerekir. Editör ve iOS Build Support kurulduğunda sıradaki işlem aşağıdaki kontrollerdir.
+İlk gerçek derleme, eski Input System paketinin artık kaldırılmış Unity API'lerini kullandığını gösterdi. Editörün kendi paket manifestinde belirtilen minimum/released `1.20.0` ve yerleşik uGUI `2.6.0` sürümleriyle derleme geçti. Unity tarafından üretilen `.meta`, sahne, proje ayarları ve paket kilidi kaynaklarla birlikte tutulur.
+
+Windows önizlemesini otomatik başlatıp yerel sunucuda yapılacak ek çalışma kontrolü otomatik onay denetimi tarafından engellendi; denetim ayrıntılı neden vermedi. Önizleme oynanarak doğrulanmadı. iOS dışa aktarımı için mevcut App Store sürümü ve TestFlight build numarası bekleniyor. Gerçek iPhone/iPad testi ve gerçek web oyuncusuyla aynı odada oynanış doğrulaması ayrıca gerekiyor.
 
 ## Yerel çalışma
 
@@ -38,22 +42,22 @@ npm run export:unity
 npm run check:unity-core
 ```
 
-Unity Hub'da bu klasörü proje olarak ekle. Editör sürümü `6000.6.2f1`, Input System `1.14.2`. Editörde `Sector 16 > Prepare native project` seçeneği boş giriş sahnesi ve uygulama ayarlarını oluşturur. Play ile native uygulama başlar. Girdi sistemi değişikliği için Unity yeniden başlatma isterse yeniden başlat.
+Unity Hub'da bu klasörü proje olarak ekle. Editör sürümü `6000.6.2f1`, Input System `1.20.0`. Giriş sahnesi ve uygulama ayarları oluşturuldu. Play ile native uygulama başlar.
 
-Editör kurulumu tamamlandıktan sonra kontrol:
+Repo kökünden editörü açmak veya kontrolleri çalıştırmak için aşağıdaki yardımcı script geçici dosyaları ve paket önbelleğini yalnızca başlattığı işlem için D: üzerinde tutar:
 
 ```powershell
-$sector16Editor='D:\unity\6000.6.2f1\Editor\Unity.exe'
-& $sector16Editor -batchmode -quit -projectPath "$PWD\unity-client" -executeMethod Sector16.Editor.NativeChecks.Run -logFile "$PWD\artifacts\unity-checks.log"
+powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Editor
+powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Check
 ```
 
-Windows önizlemesi için `SECTOR16_VERSION` ve `SECTOR16_BUILD_NUMBER` ayarla, ardından `Sector16.Editor.NativeBuild.Windows` metodunu çalıştır. Çıktı `artifacts/unity-windows/Sector16.exe` olur. Yerel sunucuya karşı test etmek için oyuna `--sector16-server http://127.0.0.1:3000` argümanı ver; aynı sunucuyu webde açıp diğer oyuncuyla katıl.
+Windows önizlemesini tekrar oluşturmak için `powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Windows -Version 2.2.0 -BuildNumber 1` çalıştır. Çıktı `artifacts/unity-windows/Sector16.exe` olur. Yerel sunucuya karşı test etmek için oyuna `--sector16-server http://127.0.0.1:3000` argümanı ver; aynı sunucuyu webde açıp diğer oyuncuyla katıl.
 
 ## Mevcut App Store uygulamasına güncelleme
 
 Bundle kimliği `com.webdehasi.sector16` olarak korunur. Yeni bir Apple uygulama kaydı açılmaz. Sürüm ve yapı numarasını mevcut App Store/TestFlight kayıtlarından kontrol ederek daha yeni ve kullanılmamış değerleri seç.
 
-1. Editörde iOS Build Support kurulu olmalı. `SECTOR16_VERSION` ve `SECTOR16_BUILD_NUMBER` ile `Sector16.Editor.NativeBuild.IOS` çalıştır. Unity kontrolü ve başarılı build sonrası `build/unity-ios` ve `sector16-export.json` oluşur.
+1. Mevcut App Store/TestFlight numaralarını kontrol ettikten sonra `powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode IOS -Version <yeni-sürüm> -BuildNumber <yeni-build>` çalıştır. Unity kontrolü ve başarılı build sonrası `build/unity-ios` ve `sector16-export.json` oluşur.
 2. Repo kökünden `pwsh -File scripts/package-unity-ios.ps1` çalıştır. Çıktı `artifacts/sector16-unity-ios.zip` olur.
 3. Kendi özel dosya depolamanda bu arşiv için Codemagic build süresince geçerli HTTPS indirme bağlantısı oluştur. Bağlantıyı Git'e yazma. Codemagic'te `unity_export` grubunda secret `UNITY_IOS_EXPORT_URL` olarak tanımla.
 4. `ios-unity-export-upload` iş akışını seç. Bu akış mevcut `KiraClubs` Apple entegrasyonu ile Unity Xcode projesini imzalar ve App Store Connect'e yükler. Otomatik beta incelemesi veya App Store incelemesi başlatmaz.
