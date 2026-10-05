@@ -5,10 +5,15 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Sector16;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
+// These public fields are populated by System.Text.Json, like Unity's JsonUtility DTOs.
+#pragma warning disable CS0649
 class Fixture
 { public string map,scenario;public Body initial;public InputFrame[] frames;public Checkpoint[] checkpoints; }
 class Checkpoint { public int step;public Body body; }
+#pragma warning restore CS0649
 static class CoreChecks
 {
     static readonly JsonSerializerOptions Options=new JsonSerializerOptions{IncludeFields=true};
@@ -27,6 +32,13 @@ static class CoreChecks
     }
     static async Task Main()
     {
+        var repository=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../"));
+        foreach(var file in Directory.EnumerateFiles(Path.Combine(repository,"unity-client/Assets"),"*.cs",SearchOption.AllDirectories))
+        {
+            var tree=CSharpSyntaxTree.ParseText(File.ReadAllText(file),new CSharpParseOptions(LanguageVersion.CSharp9));
+            foreach(var problem in tree.GetDiagnostics().Where(d=>d.Severity==DiagnosticSeverity.Error))throw new Exception(file+": "+problem);
+        }
+        Console.WriteLine("PASS: native C# syntax parses as C# 9 (Unity API compilation still requires the Editor).");
         var world=JsonSerializer.Deserialize<WorldData>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"world.json")),Options);
         var fixtures=JsonSerializer.Deserialize<Fixture[]>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"movement-fixtures.json")),Options);
         int compared=0;

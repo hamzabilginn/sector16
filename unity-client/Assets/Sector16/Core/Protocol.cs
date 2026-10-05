@@ -53,6 +53,8 @@ namespace Sector16
     [Serializable] public class Flags { public FlagState blue, orange; }
     [Serializable] public class BombState
     { public string state, carrier, site, plantBy, defuseBy; public double x,y,z,plantStart,defuseStart,detonateAt; }
+    [Serializable] public class EscortState
+    { public double x,z,yaw,progress; public int attackers,defenders,checkpoint; public bool contested,completed; }
     [Serializable] public class Envelope
     {
         public string type, id, team, message, map, mode, phase, weapon, kind, winner, killer, victim, victimId;
@@ -62,6 +64,7 @@ namespace Sector16
         public Scores scores;
         public Flags flags;
         public BombState bomb;
+        public EscortState escort;
         public PointState[] grenades, smokes;
         public PointState position, from, to;
         public int matchId, round, roundTarget;

@@ -109,3 +109,59 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+
+  ios-unity-export-upload:
+    name: Sector 16 Native Unity - exported Xcode project
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      xcode: latest
+      groups:
+        - unity_export
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.webdehasi.sector16
+    integrations:
+      app_store_connect: KiraClubs
+    scripts:
+      - name: Download the tested Unity iOS export
+        script: |
+          set -e
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlparse
+          u = urlparse(os.environ.get('UNITY_IOS_EXPORT_URL', ''))
+          if u.scheme != 'https' or not u.netloc or u.username or u.password:
+              raise SystemExit('Set secret UNITY_IOS_EXPORT_URL in unity_export to the HTTPS URL of your own tested Unity iOS export.')
+          PY
+          curl --fail --silent --show-error --location "$UNITY_IOS_EXPORT_URL" -o /tmp/sector16-unity-ios.zip
+          python3 - <<'PY'
+          import json, pathlib, zipfile
+          target = pathlib.Path('build/unity-ios').resolve()
+          target.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile('/tmp/sector16-unity-ios.zip') as archive:
+              for member in archive.infolist():
+                  path = (target / member.filename).resolve()
+                  if target != path and target not in path.parents:
+                      raise SystemExit('Export archive contains an invalid path.')
+              archive.extractall(target)
+          info = json.loads((target / 'sector16-export.json').read_text())
+          if info.get('bundleIdentifier') != 'com.webdehasi.sector16' or not info.get('controlChecksPassed'):
+              raise SystemExit('Export does not match Sector 16 or native checks were not run.')
+          if not (target / 'Unity-iPhone.xcodeproj').is_dir():
+              raise SystemExit('Unity Xcode project is missing.')
+          PY
+      - name: Sign and build native IPA
+        script: |
+          set -e
+          find build/unity-ios -type f -name '*.sh' -exec chmod +x {} +
+          xcode-project use-profiles
+          xcode-project build-ipa --project build/unity-ios/Unity-iPhone.xcodeproj --scheme Unity-iPhone
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false

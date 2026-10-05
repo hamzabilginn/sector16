@@ -16,12 +16,13 @@ namespace Sector16
         public Material Material(int rgb)
         {
             if(materials.TryGetValue(rgb,out var mat))return mat;
-            mat=new Material(Shader.Find("Standard"));mat.color=Color(rgb);mat.SetFloat("_Glossiness",.05f);materials[rgb]=mat;return mat;
+            var shader=Resources.Load<Shader>("NativeSurface");if(shader==null)throw new System.InvalidOperationException("NativeSurface shader is missing.");
+            mat=new Material(shader);mat.color=Color(rgb);materials[rgb]=mat;return mat;
         }
         public static Color Color(int rgb)=>new Color(((rgb>>16)&255)/255f,((rgb>>8)&255)/255f,(rgb&255)/255f);
         GameObject Primitive(string name,PrimitiveType type,Transform parent,Vector3 position,Vector3 size,int color)
         {
-            var obj=GameObject.CreatePrimitive(type);obj.name=name;obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=size;obj.GetComponent<Renderer>().sharedMaterial=Material(color);return obj;
+            var obj=GameObject.CreatePrimitive(type);obj.name=name;obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=size;obj.GetComponent<Renderer>().sharedMaterial=Material(color);Destroy(obj.GetComponent<Collider>());return obj;
         }
         public void Map(MapData map,Camera camera)
         {
@@ -38,6 +39,7 @@ namespace Sector16
                 Primitive(team+" base",PrimitiveType.Cube,mapRoot.transform,Position(0,.01,team=="blue"?map.baseZ:-map.baseZ),new Vector3((float)map.width-2,.02f,4),team=="blue"?0x326680:0xa76e40);
             foreach(var site in map.sites)
                 Primitive("Site "+site.id,PrimitiveType.Cylinder,mapRoot.transform,Position(site.x,.035,site.z),new Vector3(6,.02f,6),0xa6ac58);
+            StaticBatchingUtility.Combine(mapRoot);
         }
         public void Players(Envelope state,string selfId)
         {
@@ -60,11 +62,13 @@ namespace Sector16
             foreach(var g in state.grenades??System.Array.Empty<PointState>())points["grenade-"+g.id]=g;
             foreach(var g in state.smokes??System.Array.Empty<PointState>())points["smoke-"+g.id]=g;
             if(state.bomb!=null&&state.bomb.state!="carried")points["bomb"]=new PointState{x=state.bomb.x,y=state.bomb.y,z=state.bomb.z,kind="bomb"};
+            if(state.escort!=null)points["escort"]=new PointState{x=state.escort.x,y=.5,z=state.escort.z,kind="escort"};
             foreach(var flag in new[]{state.flags?.blue,state.flags?.orange})if(flag!=null)points["flag-"+flag.team]=new PointState{x=flag.x,y=flag.y+.8,z=flag.z,kind="flag"};
             foreach(var pair in points)
             {
-                if(!effects.TryGetValue(pair.Key,out var visual)){visual=Primitive(pair.Key,PrimitiveType.Sphere,transform,Vector3.zero,Vector3.one*.25f,pair.Value.kind=="smoke"?0x7c8585:0xb7cf69);effects[pair.Key]=visual;}
+                if(!effects.TryGetValue(pair.Key,out var visual)){visual=Primitive(pair.Key,pair.Value.kind=="escort"?PrimitiveType.Cube:PrimitiveType.Sphere,transform,Vector3.zero,pair.Value.kind=="escort"?new Vector3(2,1.1f,3):Vector3.one*.25f,pair.Value.kind=="smoke"?0x7c8585:0xb7cf69);effects[pair.Key]=visual;}
                 visual.transform.position=Position(pair.Value.x,pair.Value.y+.2,pair.Value.z);
+                if(pair.Value.kind=="escort")visual.transform.rotation=Rotation(state.escort.yaw);
                 if(pair.Value.kind=="smoke")visual.transform.localScale=new Vector3(6,4.5f,6);
             }
             foreach(var id in new List<string>(effects.Keys))if(!points.ContainsKey(id)){Destroy(effects[id]);effects.Remove(id);}

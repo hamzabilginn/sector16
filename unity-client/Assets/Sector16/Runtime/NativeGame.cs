@@ -42,7 +42,7 @@ namespace Sector16
         void Awake()
         {
             Application.targetFrameRate=60;QualitySettings.vSyncCount=0;
-            Screen.orientation=ScreenOrientation.LandscapeLeft;Screen.sleepTimeout=SleepTimeout.NeverSleep;
+            Screen.autorotateToPortrait=false;Screen.autorotateToPortraitUpsideDown=false;Screen.autorotateToLandscapeLeft=true;Screen.autorotateToLandscapeRight=true;Screen.orientation=ScreenOrientation.AutoRotation;Screen.sleepTimeout=SleepTimeout.NeverSleep;
             var asset=Resources.Load<TextAsset>("world");
             if(asset==null)throw new InvalidOperationException("Export world data before building the native client.");
             data=JsonUtility.FromJson<WorldData>(asset.text);
@@ -76,8 +76,9 @@ namespace Sector16
             var viewport=NativeUI.Panel(lobby,"Rooms",new Color(.04f,.08f,.1f,.6f));NativeUI.Place(viewport,new Vector2(.5f,1),new Vector2(0,-218),new Vector2(475,167));viewport.GetComponent<Image>().raycastTarget=true;viewport.gameObject.AddComponent<RectMask2D>();
             roomList=NativeUI.Panel(viewport,"Content",Color.clear);roomList.anchorMin=new Vector2(0,1);roomList.anchorMax=new Vector2(1,1);roomList.pivot=new Vector2(.5f,1);
             var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=viewport;scroll.content=roomList;scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
-            var connect=NativeUI.Button(lobby,"YENİDEN BAĞLAN",Connect);NativeUI.Place((RectTransform)connect.transform,new Vector2(.5f,0),new Vector2(-125,25),new Vector2(200,36));
-            var create=NativeUI.Button(lobby,"BOTSIZ ODA KUR",()=>Join("create"));NativeUI.Place((RectTransform)create.transform,new Vector2(.5f,0),new Vector2(125,25),new Vector2(200,36));
+            var connect=NativeUI.Button(lobby,"YENİDEN BAĞLAN",Connect);NativeUI.Place((RectTransform)connect.transform,new Vector2(.5f,0),new Vector2(-160,25),new Vector2(150,36));
+            var create=NativeUI.Button(lobby,"BOTSIZ ODA KUR",()=>Join("create"));NativeUI.Place((RectTransform)create.transform,new Vector2(.5f,0),new Vector2(0,25),new Vector2(150,36));
+            var privacy=NativeUI.Button(lobby,"GİZLİLİK",()=>Application.OpenURL(DefaultServer+"/privacy.html"));NativeUI.Place((RectTransform)privacy.transform,new Vector2(.5f,0),new Vector2(160,25),new Vector2(150,36));
             pause=Modal("OYUN DURAKLATILDI",new Vector2(380,315));
             MenuButton(pause,"OYUNA DÖN",65,()=>SetPaused(false));MenuButton(pause,"SİLAH SATIN AL",112,OpenShop);MenuButton(pause,"SKOR TABLOSU",159,OpenScore);
             MenuButton(pause,"HASSASİYET: "+controls.Sensitivity.ToString("0.0"),206,()=>{controls.Sensitivity=controls.Sensitivity>=2? .5f:controls.Sensitivity+.25f;PlayerPrefs.SetFloat("s16.native.sensitivity",controls.Sensitivity);Notify("Dokunma hassasiyeti: "+controls.Sensitivity.ToString("0.00"));});
@@ -197,6 +198,7 @@ namespace Sector16
             view.fieldOfView=Mathf.Lerp(view.fieldOfView,fov,1-Mathf.Exp(-Time.deltaTime*14));gunKick=Mathf.Max(0,gunKick-Time.deltaTime*7);world.Gun(view,selected,own.hp>0&&controls.Aim==0,gunKick);
             crosshair.gameObject.SetActive(!paused&&own.hp>0);hud.text=$"SAĞLIK {own.hp}  •  ZIRH {own.armor}\n{selected}  {own.ammo}/{own.reserve}";
             network.text=$"MAVİ {snapshot.scores?.blue}  •  {Math.Floor(snapshot.remaining/60):00}:{Math.Floor(snapshot.remaining%60):00}  •  TURUNCU {snapshot.scores?.orange}";
+            if(snapshot.escort!=null)network.text+=$"\nESKORT %{Math.Round(snapshot.escort.progress*100)}"+(snapshot.escort.contested?" · ÇATIŞMA":"");
         }
         void OnApplicationPause(bool value){if(value&&room!=null)SetPaused(true);}
         void OnApplicationFocus(bool value){if(!value&&room!=null)SetPaused(true);}

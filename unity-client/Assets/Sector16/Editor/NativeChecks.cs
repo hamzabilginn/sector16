@@ -11,7 +11,7 @@ namespace Sector16.Editor
         public static void Run()
         {
             var world=JsonUtility.FromJson<WorldData>(Resources.Load<TextAsset>("world").text);
-            Check(world.maps.Length==6,"Six exported maps");Check(world.weapons.Length==9,"Nine exported weapons");
+            Check(world.maps.Length==7,"Seven exported maps including depot");Check(world.weapons.Length==9,"Nine exported weapons");
             var input=new InputFrame{seq=17,x=.5,z=-1,yaw=1.2,pitch=-.3,fire=true,weapon="awp"};
             var json=JsonUtility.ToJson(new InputMessage{inputs=new[]{input}});
             var roundTrip=JsonUtility.FromJson<InputMessage>(json);Check(roundTrip.inputs[0].seq==17&&roundTrip.inputs[0].fire,"Input wire roundtrip");
