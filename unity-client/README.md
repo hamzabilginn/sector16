@@ -19,6 +19,7 @@ Görseller mevcut geometrinin basit karşılıklarıdır. Tam görsel/animasyon/
 
 - 35 referans hareket senaryosu, 280 kontrol noktası: C# ve JavaScript tüm hareket alanlarında `1e-8` toleransı içinde eşleşir.
 - İki C# WebSocket istemcisi, ayrı yerel sunucuda aynı odaya katılır; birbirini, sunucunun onayladığı hareketi ve ateşi görür; ayrılma doğrulanır. Bu test Unity sahnesi veya gerçek tarayıcı ile fiziksel cihaz testi değildir.
+- Canlı 2.1.0 kaynak yedeğiyle karşılaştırmada mevcut altı haritanın çarpışma kutuları, silah tanımları ve hareket simülasyonu güncel kaynaklarla eşleşir. Yeni `depot` haritası 2.2.0 kaynaklarına aittir; canlı sunucunun sunduğu oda/haritalar kullanılır.
 - C# 9 sözdizimi kontrolü ve Unity `6000.6.2f1` API derlemesi geçti.
 - Unity `NativeChecks.Run` geçti: JSON, harita/silah verileri, koordinat/nişan dönüşümü, aynı anda ateş ve kamera parmakları, pointer sahipliği, sıfırlama, ölüm ve duraklatma.
 - Windows native paketi oluşturuldu: `artifacts/unity-windows/Sector16.exe`. Sürüm `2.2.0`, build `1` yalnızca bu yerel önizleme içindir.

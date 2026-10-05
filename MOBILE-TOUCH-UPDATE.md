@@ -1,7 +1,7 @@
 # Mobil dokunma düzeltmesi — 23 Eylül 2026
 
 Başlangıç: GitHub `5e2e4f9`; canlı v2.1.0 kaynaklarıyla karşılaştırılmış yerel kopya.
-Dal: `codex/mobile-touch-recovery`.
+Güncel dal: `codex/unity-crossplay-client`. Bu belge ilk Capacitor düzeltmesini anlatır; native istemci ve güncel doğrulama durumu için [unity-client/README.md](unity-client/README.md) dosyasına bak.
 
 ## Değişiklikler
 
@@ -35,12 +35,12 @@ Hareket yönetiminin tarayıcı davranışı: https://developer.mozilla.org/en-U
 
 Bu değişiklik gerçek iPhone/iPad'de henüz test edilmedi ve Windows üzerinde imzalı IPA üretilmedi. Tarayıcı emülasyonu fiziksel cihaz testi değildir. TestFlight'ta çift dokunma, aynı anda üç parmak kullanımı, arka plana alma, ekran dönüşü, ağ kesintisi ve masaüstü oyuncusuyla aynı odada oynama doğrulanmalı.
 
-Bu bir Capacitor istemci düzeltmesidir; Unity istemcisi henüz uygulanmadı. Canlı sunucu değiştirilmedi. Sunucu adresi, bundle kimliği ve WebSocket oyun protokolü korunur.
+Burada anlatılan dokunma düzeltmeleri Capacitor istemcisine aittir. Aynı dalda ayrıca Unity native istemci prototipi hazırlandı; iOS 1.1 (20) Xcode dışa aktarımı oluşturuldu. Native istemcinin gerçek cihazda oynanış kontrolü henüz tamamlanmadı. Canlı sunucu değiştirilmedi. Sunucu adresi, bundle kimliği ve WebSocket oyun protokolü korunur.
 
-## Native istemci için sonraki çalışma
+## Native istemci ve sonraki doğrulama
 
-Mevcut Node/WebSocket sunucusu oda, hareket, hasar ve maç sonucunda yetkili kalmalı. Unity istemcisi aynı oda katılım mesajlarını ve sıralı `input` paketlerini kullanmalı; ayrı Unity lobi/sunucu sistemi açılmamalı.
+Unity istemcisi mevcut Node/WebSocket sunucusunun oda katılım mesajlarını ve sıralı `input` paketlerini kullanır. Sunucu oda, hareket, hasar ve maç sonucunda yetkili kalır.
 
 Önce aynı yerel odada bir web ve bir Unity istemcisinin konum, atış, ölüm ve yeniden doğma uyumu doğrulanmalı. Unity hareket tahmini ve sunucu düzeltmesi mevcut `shared/` kurallarıyla eşleşmeli; harita çarpışmaları ve koordinatlar da birebir taşınmalı. Ardından dokunmatik kamera, joystick, silah animasyonları, performans ve iOS yaşam döngüsü ele alınmalı.
 
-Unity iOS dışa aktarımı için Codemagic'e ayrıca Unity sürümü/lisansı ve build adımı gerekir. Mevcut Capacitor iş akışı Unity projesini derlemez. Güncelleme aynı `com.webdehasi.sector16` kimliği ve Apple kaydıyla hazırlanmalı; yükleme öncesinde mevcut App Store sürüm/build numarası kontrol edilmeli.
+Native iOS dışa aktarımı yerel Unity editöründe yapılır. Codemagic `ios-unity-export-upload` iş akışı, `unity_export` grubundaki secret `UNITY_IOS_EXPORT_URL` üzerinden bu arşivi indirir ve Xcode ile imzalı IPA oluşturur. Güncelleme aynı `com.webdehasi.sector16` kimliği ve Apple kaydıyla, sürüm 1.1/build 20 olarak hazırlandı. Sonraki yüklemelerde kullanılmamış build numarası seçilmelidir.
