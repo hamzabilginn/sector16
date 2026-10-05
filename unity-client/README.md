@@ -3,6 +3,8 @@
 Unity projesi: `D:\Codex\Sector16-audit-20260922\github\unity-client`.
 Dal: `codex/unity-crossplay-client`. GitHub `ed6b74a` (2.2.0) yerel çalışmaya alındı; canlı sunucu bu tarihte hâlâ 2.1.0 bildiriyor.
 
+Çalışma yerel Git commit'lerinde kayıtlı. GitHub'a dal gönderme denemesi bu bilgisayardaki Git Credential Manager'ın eksik `GitHub, Version=2.6.1.0` bileşeni ve kullanılabilir GitHub kimlik bilgisinin bulunmaması nedeniyle tamamlanmadı. Ana dalda veya GitHub'da bu native değişiklikler henüz yok.
+
 ## Hazırlanan uygulama kodu
 
 Oyun, Unity kamera/mesh/UI/dokunma sistemleriyle çizilir. Mevcut Node sunucusunun `/ws` protokolü kullanılır. Oda listesi, hızlı katılma, şifreli oda, özel oda, antrenman, hareket/nişan/ateş, yeniden doldurma, silah değiştirme, dürbün, zıplama, eğilme, koşma, bomba kurma/imha, el bombası, sağlık kiti, alışveriş, skor ve raund izleme kodu mevcut.
