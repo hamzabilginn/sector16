@@ -1,4 +1,5 @@
 import {CITY} from './city.mjs';
+import {DEPOT} from './depot.mjs';
 export const ARENA={width:56,depth:64,name:'DOKLAR'};
 // All coordinates and collision geometry are shared by server and renderer.
 const DOCK_BOXES=[
@@ -50,6 +51,7 @@ const desert=[...boundary,
 const refinery=[...boundary,wall(0,0,8,18,6,'building'),wall(-18,-12,10,4,3,'container'),wall(18,12,10,4,3,'container'),wall(-18,15,4,12,4,'building'),wall(18,-15,4,12,4,'building'),wall(-7,-22,5,3,1.4,'crate'),wall(7,22,5,3,1.4,'crate'),wall(-22,2,3,7,2,'barrier'),wall(22,-2,3,7,2,'barrier')];
 export const MAPS={
  city:CITY,
+ depot:DEPOT,
  range:{id:'range',name:'Antrenman Alanı',boxes:[...boundary],spawns:{blue:[[0,27]],orange:[[-16,-8],[-8,-8],[0,-8],[8,-8],[16,-8]]},sky:0x91a8ae,floor:0x6d766c},
  docks:{id:'docks',name:'Doklar',description:'Endüstriyel liman',boxes:DOCK_BOXES,spawns:SPAWNS,floor:0x696f6a,sky:0x809297},
  iceworld:{id:'iceworld',name:'Buz Arenası',description:'Iceworld esintili · Dört blok, hızlı çatışma',boxes:ice,spawns:SPAWNS,floor:0xc2dce3,sky:0xabcddd},

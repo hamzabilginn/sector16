@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {freshBomb,dropBomb,updateBomb,bombRoundWinner,BOMB_SITES} from '../shared/bomb.mjs';
+import {freshBomb,dropBomb,updateBomb,bombRoundWinner,BOMB_SITES,bombSites} from '../shared/bomb.mjs';
 import {createGrenade,stepGrenade,blastDamage} from '../shared/grenades.mjs';
 import {freshBody,MAPS,simulate} from '../shared/world.mjs';
 import {pathTo,navigation} from '../server/navigation.mjs';
@@ -24,7 +24,7 @@ test('grenade bounces off ground/walls and blast respects distance and cover',()
  const blast={x:0,y:1,z:0};assert.ok(blastDamage(blast,actor('b','blue',1,0),[])>70);assert.equal(blastDamage(blast,actor('b','blue',10,0),[]),0);assert.equal(blastDamage(blast,actor('b','blue',0,-4),[wall]),0);
 });
 test('A/B navigation is reachable on all maps without cutting blocked corners',()=>{
- for(const map of Object.keys(MAPS)){const nav=navigation(map);assert.ok(nav.nodes.length>100);for(const site of BOMB_SITES){const path=pathTo(map,{x:20,z:-27},site,Math.sign(site.x));assert.ok(path.length>10);assert.ok(Math.hypot(path.at(-1).x-site.x,path.at(-1).z-site.z)<2);}}
+ for(const map of Object.keys(MAPS)){const nav=navigation(map);assert.ok(nav.nodes.length>100);for(const site of bombSites(map)){const path=pathTo(map,{x:20,z:-27},site,Math.sign(site.x));assert.ok(path.length>10);assert.ok(Math.hypot(path.at(-1).x-site.x,path.at(-1).z-site.z)<2);}}
 });
 test('bot roles choose distinct routes and their spawn positions spread during simulation',()=>{
  const bots=Array.from({length:5},(_,i)=>({...actor('bot'+i,'orange',-20+i*10,-27),bot:true,botIndex:i,ai:makeBrain(i),yaw:Math.PI,ammo:20,primary:null,secondary:'pistol',grenades:0,nextFire:0}));const enemy=actor('human','blue',0,28);const r={map:'docks',mode:'tdm',botDifficulty:'medium',players:new Map([...bots,enemy].map(p=>[p.id,p]))};
