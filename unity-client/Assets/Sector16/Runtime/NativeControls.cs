@@ -44,7 +44,11 @@ namespace Sector16
             SetGameplay(false);
         }
         void Surface(RectTransform target,string control)
-        {var surface=target.gameObject.AddComponent<TouchSurface>();surface.Owner=this;surface.Control=control;surfaces.Add(surface);}
+        {
+            // Decorative panels ignore raycasts; every input surface must receive them.
+            target.GetComponent<Graphic>().raycastTarget=true;
+            var surface=target.gameObject.AddComponent<TouchSurface>();surface.Owner=this;surface.Control=control;surfaces.Add(surface);
+        }
         void Add(string id,string label,Vector2 position,Vector2 size,Action action,bool held=false)
         {
             var button=NativeUI.Button(root,label,()=>{if(Gameplay&&Allowed(id))action?.Invoke();});

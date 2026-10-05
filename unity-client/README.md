@@ -12,7 +12,7 @@ Haritalar static batching kullanır. Karakter ve silah parçaları hareket eden 
 
 Kullanıcının isteğiyle mobil **zıpla/eğil düğmeleri kaldırıldı**. Ortak sunucu fiziği ve masaüstü klavye kısayolları korunur.
 
-- Sol joystick: hareket; dış kenara itilince koşma.
+- Sol joystick: basılı tutup sürükleyerek hareket; dış kenara itilince koşma. Build 22, görünür joystick panelinin dokunmaları almamasını giderir.
 - Sağ: ateş ve nişan. Ateş parmağıyla sürükleyerek kamera da çevrilebilir.
 - Cephane göstergesine dokunma: doldurma. Şarjör boşalınca yedek mermi varsa otomatik doldurma istenir.
 - Silah adına dokunma: eldeki silahlar arasında geçiş.
@@ -36,7 +36,7 @@ Canlı sunucunun son doğrulanan sürümü 2.1.0, bu dalın web kaynağı 2.2.0'
 - 45 JavaScript oyun testi geçti.
 - C# hareket karşılaştırması: 35 senaryo, 280 kontrol noktası, bütün hareket alanları `1e-8` toleransında eşleşti.
 - İki C# WebSocket istemcisi ayrı yerel Node sunucusunda aynı oda, ortak durum, sunucunun onayladığı hareket/ateş ve ayrılma testlerini geçti.
-- Unity kontrol testi: JSON, koordinat/nişan, bağımsız ateş/kamera parmakları, pointer sahipliği, sıfırlama, ölüm, duraklatma, tek seferlik HUD doldurma, silah değiştirme, bıçak/menü kısıtları.
+- Unity kontrol testi: JSON, koordinat/nişan, HUD üzerinden gerçek UI raycast ile joystick'e ulaşma, dört yönde sürüklemenin sunucu girdisine dönüşmesi, bırakınca durma, bağımsız ateş/kamera parmakları, pointer sahipliği, sıfırlama, ölüm, duraklatma, tek seferlik HUD doldurma, silah değiştirme, bıçak/menü kısıtları. Joystick raycast testi düzeltmeden önce başarısız olur.
 - Unity kamera/UI çizimiyle telefon ve iPad oranlarında lobi, oyun, Teçhizat, satın alma, ayarlar, yakın nişan ve dürbün görüntüleri üretildi ve görsel olarak kontrol edildi.
 - Art üretimi tekrar çalıştırılınca aynı JSON özeti oluşur.
 
@@ -54,7 +54,7 @@ npm run export:unity
 npm run export:unity-art
 npm run check:unity-core
 powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Preview
-powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Windows -Version 1.1 -BuildNumber 21
+powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Windows -Version 1.1 -BuildNumber 22
 ```
 
 Windows çıktısı `artifacts/unity-windows/Sector16.exe`. Yanındaki `Sector16_Data`, `UnityPlayer.dll` ve diğer dosyalar birlikte tutulmalıdır. Yerel ortak oyun testi için `--sector16-server http://127.0.0.1:3000` argümanını kullan; web oyuncusunu da aynı Node sunucusuna bağla.
@@ -63,17 +63,17 @@ Editörü açmak için `powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode
 
 ## App Store güncellemesi
 
-App Store'da kullanıcı ekranındaki sürüm 1.0, en yüksek build 19 idi. İlk görsel prototip 1.1 (20) olarak dışa aktarılmıştı; kullanıcı onun Codemagic derlemesini iptal etti. Yeniden tasarlanan istemci için **1.1 (21)** ayrıldı. Başka bir yükleme yapıldıysa sonraki derlemede kullanılmamış daha yüksek build seçilmelidir.
+App Store'da kullanıcı ekranındaki sürüm 1.0 idi. Yeniden tasarlanan **1.1 (21)** App Store Connect'e yüklendi ve kullanıcı incelemeye gönderdi. Fiziksel mobil testte joystick'in dokunmaları almadığı bildirildi. Bu düzeltme için **1.1 (22)** ayrıldı. Başka bir yükleme yapıldıysa sonraki derlemede kullanılmamış daha yüksek build seçilmelidir.
 
 ```powershell
-powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode IOS -Version 1.1 -BuildNumber 21
+powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode IOS -Version 1.1 -BuildNumber 22
 powershell -NoProfile -File scripts/package-unity-ios.ps1
 ```
 
-Çıktı `build/unity-ios`, arşiv `artifacts/sector16-unity-ios.zip`. `sector16-export.json` bundle/sürüm/build, kontrol sonucu ve `presentationRevision` içerir. Paketleme ve Codemagic önceki görsel prototipi reddeder; eski bağlantıyla yanlış istemci derlenmez.
+Çıktı `build/unity-ios`, arşiv `artifacts/sector16-unity-ios.zip`. `sector16-export.json` bundle/sürüm/build, kontrol sonucu ve `presentationRevision` içerir. Paketleme ve Codemagic joystick düzeltmesini içermeyen önceki dışa aktarımları reddeder; eski bağlantıyla yanlış istemci derlenmez.
 
 1. Güncel arşiv için özel depoda geçerli HTTPS indirme bağlantısı hazırlanır; bağlantı Git'e yazılmaz.
-2. Codemagic `unity_export` grubundaki secret `UNITY_IOS_EXPORT_URL` yeni bağlantıyla güncellenir. Eski build 20 bağlantısı kullanılamaz.
+2. Codemagic `unity_export` grubundaki secret `UNITY_IOS_EXPORT_URL` yeni bağlantıyla güncellenir. Önceki build 21 bağlantısı kullanılamaz.
 3. Dal `codex/unity-crossplay-client`, iş akışı **Sector 16 Native Unity - exported Xcode project** seçilir.
 4. Codemagic Apple entegrasyonu ile Xcode çıktısını imzalar ve App Store Connect'e yükler; otomatik App Review başlatmaz.
 5. TestFlight ile fiziksel iPhone/iPad ve gerçek web oyuncusuyla oynanış doğrulanır; sonra güncelleme incelemeye gönderilir.

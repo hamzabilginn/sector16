@@ -11,7 +11,7 @@ namespace Sector16
     public sealed partial class NativeGame : MonoBehaviour
     {
         public const string DefaultServer="https://sector16.18.185.7.35.sslip.io";
-        public const string PresentationRevision="mobile-redesign-20261005";
+        public const string PresentationRevision="mobile-joystick-fix-20261005";
         GameSocket socket;
         WorldData data;
         WorldRenderer world;
