@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="Sector16.*" preserve="all" />
+  </assembly>
+</linker>

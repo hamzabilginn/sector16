@@ -16,3 +16,14 @@ android/local.properties
 *.pfx
 signing.json
 .env.*
+
+unity-client/Library/
+unity-client/Temp/
+unity-client/Obj/
+unity-client/Logs/
+unity-client/UserSettings/
+unity-client/Tests/bin/
+unity-client/Tests/obj/
+unity-client/*.csproj
+unity-client/*.sln
+build/unity-ios/

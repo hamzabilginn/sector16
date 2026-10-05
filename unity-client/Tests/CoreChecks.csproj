@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Assets/Sector16/Core/*.cs" />
+    <Compile Include="CoreChecks.cs" />
+    <None Include="movement-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Assets/Resources/world.json" Link="world.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
