@@ -148,6 +148,8 @@ workflows:
           info = json.loads((target / 'sector16-export.json').read_text())
           if info.get('bundleIdentifier') != 'com.webdehasi.sector16' or not info.get('controlChecksPassed'):
               raise SystemExit('Export does not match Sector 16 or native checks were not run.')
+          if info.get('presentationRevision') != 'mobile-redesign-20261005':
+              raise SystemExit('This is the retired prototype export. Generate a new Unity iOS export and update UNITY_IOS_EXPORT_URL before building.')
           if not (target / 'Unity-iPhone.xcodeproj').is_dir():
               raise SystemExit('Unity Xcode project is missing.')
           PY

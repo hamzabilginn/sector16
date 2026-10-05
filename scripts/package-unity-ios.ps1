@@ -4,6 +4,7 @@ $sector16Export=(Resolve-Path -LiteralPath $ExportPath).Path
 if(-not (Test-Path -LiteralPath (Join-Path $sector16Export 'Unity-iPhone.xcodeproj'))) {throw 'A successful Unity iOS export is required.'}
 $sector16Info=Get-Content -LiteralPath (Join-Path $sector16Export 'sector16-export.json') -Raw | ConvertFrom-Json
 if($sector16Info.bundleIdentifier -ne 'com.webdehasi.sector16' -or !$sector16Info.controlChecksPassed){throw 'The export must match Sector 16 and pass native checks.'}
+if($sector16Info.presentationRevision -ne 'mobile-redesign-20261005'){throw 'This export is the retired prototype. Generate the redesigned native client before packaging.'}
 $sector16Plist=New-Object System.Xml.XmlDocument
 $sector16Plist.XmlResolver=$null
 $sector16Plist.Load((Join-Path $sector16Export 'Info.plist'))

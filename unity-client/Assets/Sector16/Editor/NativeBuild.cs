@@ -9,7 +9,7 @@ namespace Sector16.Editor
 {
     public static class NativeBuild
     {
-        [Serializable] class ExportInfo { public string bundleIdentifier,version,build,unity; public bool controlChecksPassed; }
+        [Serializable] class ExportInfo { public string bundleIdentifier,version,build,unity,presentationRevision; public bool controlChecksPassed; }
         const string ScenePath="Assets/Scenes/Game.unity";
         [MenuItem("Sector 16/Prepare native project")]
         public static void Prepare()
@@ -47,7 +47,7 @@ namespace Sector16.Editor
             var root=Path.GetFullPath(Path.Combine(Application.dataPath,"../.."));
             var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{ScenePath},locationPathName=Path.Combine(root,location),target=target,options=BuildOptions.None});
             if(report.summary.result!=BuildResult.Succeeded)throw new InvalidOperationException("Native build failed: "+report.summary.result);
-            if(target==BuildTarget.iOS)File.WriteAllText(Path.Combine(root,location,"sector16-export.json"),JsonUtility.ToJson(new ExportInfo{bundleIdentifier="com.webdehasi.sector16",version=version,build=number,unity=Application.unityVersion,controlChecksPassed=true}));
+            if(target==BuildTarget.iOS)File.WriteAllText(Path.Combine(root,location,"sector16-export.json"),JsonUtility.ToJson(new ExportInfo{bundleIdentifier="com.webdehasi.sector16",version=version,build=number,unity=Application.unityVersion,presentationRevision=NativeGame.PresentationRevision,controlChecksPassed=true}));
         }
         public static void Windows()=>Build(BuildTarget.StandaloneWindows64,"artifacts/unity-windows/Sector16.exe");
         public static void IOS()=>Build(BuildTarget.iOS,"build/unity-ios");

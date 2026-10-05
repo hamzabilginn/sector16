@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Check','Prepare','Windows','IOS','Editor')]
+    [ValidateSet('Check','Prepare','Windows','IOS','Editor','Preview')]
     [string]$Mode = 'Check',
     [string]$EditorPath = 'D:\unity\6000.6.2f1\Editor\Unity.exe',
     [string]$CacheRoot = 'D:\Codex\unity-cache',
@@ -35,6 +35,7 @@ $taskMethod = switch ($Mode) {
     'Prepare' { 'Sector16.Editor.NativeBuild.Prepare' }
     'Windows' { 'Sector16.Editor.NativeBuild.Windows' }
     'IOS' { 'Sector16.Editor.NativeBuild.IOS' }
+    'Preview' { 'Sector16.Editor.NativePresentationChecks.Capture' }
 }
 $taskArguments += @('-batchmode','-quit','-executeMethod',$taskMethod)
 if ($Mode -eq 'IOS') { $taskArguments += @('-buildTarget','iOS') }

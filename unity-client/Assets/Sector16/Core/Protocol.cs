@@ -37,7 +37,9 @@ namespace Sector16
         public bool bot, canBuy, invuln;
         public double reload, respawn;
         public WeaponAttachments attachments;
+        public UtilityState utility;
     }
+    [Serializable] public class UtilityState { public int he,flash,smoke; }
     [Serializable] public class AttachmentState { public bool scope, suppressor, extended; }
     [Serializable] public class WeaponAttachments
     {
@@ -67,7 +69,8 @@ namespace Sector16
         public EscortState escort;
         public PointState[] grenades, smokes;
         public PointState position, from, to;
-        public int matchId, round, roundTarget;
+        public int matchId, round, roundTarget, damage;
+        public bool head,kill,suppressed;
         public double time, remaining, restart, t, duration;
     }
     [Serializable] public class Box

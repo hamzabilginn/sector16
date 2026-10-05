@@ -14,7 +14,7 @@ namespace Sector16
         {
             if(pointer.HasValue||!Owner.Gameplay)return;
             if(!Owner.Allowed(Control))return;
-            pointer=e.pointerId;previous=e.position;Owner.Hold(Control,true);
+            pointer=e.pointerId;previous=e.position;e.useDragThreshold=false;Owner.Hold(Control,true);
             if(Control=="move")Move(e);
         }
         public void OnDrag(PointerEventData e)

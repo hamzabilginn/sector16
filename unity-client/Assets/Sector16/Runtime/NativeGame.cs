@@ -8,9 +8,10 @@ using UnityEngine.InputSystem.UI;
 
 namespace Sector16
 {
-    public sealed class NativeGame : MonoBehaviour
+    public sealed partial class NativeGame : MonoBehaviour
     {
         public const string DefaultServer="https://sector16.18.185.7.35.sslip.io";
+        public const string PresentationRevision="mobile-redesign-20261005";
         GameSocket socket;
         WorldData data;
         WorldRenderer world;
@@ -18,7 +19,7 @@ namespace Sector16
         Camera view;
         RectTransform safeArea,lobby,pause,score,shop,roomList;
         InputField nickname,password;
-        Text network,hud,notice,crosshair;
+        Text network,notice,crosshair;
         PlayerState own;
         RoomInfo room;
         RoomInfo[] rooms=Array.Empty<RoomInfo>();
@@ -35,12 +36,21 @@ namespace Sector16
         int recoilIndex;
         float gunKick;
         Rect lastSafe;
+        NativeHud gameHud;
+        NativeAudio audio;
+        NativeSettings settings;
+        bool wasReloading;
+#if UNITY_EDITOR
+        public static bool VisualPreview;
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Bootstrap()
-        {if(FindFirstObjectByType<NativeGame>()==null)new GameObject("Sector 16").AddComponent<NativeGame>();}
-        void Awake()
+        {if(FindAnyObjectByType<NativeGame>()==null)new GameObject("Sector 16").AddComponent<NativeGame>();}
+        void Awake()=>Initialize();
+        public void Initialize()
         {
+            if(view!=null)return;
             Application.targetFrameRate=60;QualitySettings.vSyncCount=0;
             Screen.autorotateToPortrait=false;Screen.autorotateToPortraitUpsideDown=false;Screen.autorotateToLandscapeLeft=true;Screen.autorotateToLandscapeRight=true;Screen.orientation=ScreenOrientation.AutoRotation;Screen.sleepTimeout=SleepTimeout.NeverSleep;
             var asset=Resources.Load<TextAsset>("world");
@@ -50,48 +60,19 @@ namespace Sector16
             var args=Environment.GetCommandLineArgs();
             for(int i=0;i<args.Length-1;i++)if(args[i]=="--sector16-server")serverOrigin=args[i+1];
             GameSocket.Endpoint(serverOrigin);
-            world=gameObject.AddComponent<WorldRenderer>();controls=gameObject.AddComponent<NativeControls>();
+            world=gameObject.AddComponent<WorldRenderer>();controls=gameObject.AddComponent<NativeControls>();audio=gameObject.AddComponent<NativeAudio>();audio.Initialize();
             view=new GameObject("Game camera",typeof(Camera),typeof(AudioListener)).GetComponent<Camera>();view.nearClipPlane=.05f;view.farClipPlane=220;view.fieldOfView=78;
-            var light=new GameObject("Sun",typeof(Light)).GetComponent<Light>();light.type=LightType.Directional;light.intensity=1.1f;light.transform.rotation=Quaternion.Euler(45,-25,0);light.shadows=LightShadows.None;
-            if(FindFirstObjectByType<EventSystem>()==null)new GameObject("Input",typeof(EventSystem),typeof(InputSystemUIInputModule));
-            BuildUI();ApplySafeArea();Connect();
-        }
-        void BuildUI()
-        {
-            var canvas=new GameObject("Native UI",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));canvas.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
-            var scaler=canvas.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(844,390);scaler.matchWidthOrHeight=.5f;
-            safeArea=NativeUI.Panel(canvas.transform,"Safe area",Color.clear);
-            controls.Pause=()=>SetPaused(true);controls.Score=OpenScore;controls.Shop=OpenShop;controls.Weapon=CycleWeapon;controls.Grenade=()=>Send(new Command{type="grenade",kind="he"});controls.Medkit=()=>Send(new Command{type="medkit"});
-            controls.Sensitivity=PlayerPrefs.GetFloat("s16.native.sensitivity",1);controls.Build(safeArea);
-            var hp=NativeUI.Panel(safeArea,"HUD",Color.clear);NativeUI.Place(hp,new Vector2(.5f,0),new Vector2(0,32),new Vector2(280,54));hud=NativeUI.Label(hp,"",14);
-            var aim=NativeUI.Panel(safeArea,"Crosshair",Color.clear);NativeUI.Place(aim,new Vector2(.5f,.5f),Vector2.zero,new Vector2(44,44));crosshair=NativeUI.Label(aim,"+",24);
-            var info=NativeUI.Panel(safeArea,"Status",Color.clear);NativeUI.Place(info,new Vector2(.5f,1),new Vector2(0,-28),new Vector2(260,50));network=NativeUI.Label(info,"Sunucuya bağlanılıyor…",13);
-            var toast=NativeUI.Panel(safeArea,"Notice",Color.clear);NativeUI.Place(toast,new Vector2(.5f,.7f),Vector2.zero,new Vector2(450,48));notice=NativeUI.Label(toast,"",16);
-            lobby=Modal("SECTOR 16",new Vector2(510,350));
-            nickname=NativeUI.Field(lobby,PlayerPrefs.GetString("s16.native.nickname","Oyuncu"),new Vector2(-60,-60));((RectTransform)nickname.transform).sizeDelta=new Vector2(245,42);
-            var training=NativeUI.Button(lobby,"ANTRENMAN",()=>Join("training"));NativeUI.Place((RectTransform)training.transform,new Vector2(.5f,1),new Vector2(155,-60),new Vector2(140,42));
-            password=NativeUI.Field(lobby,"",new Vector2(-60,-108),64);((RectTransform)password.transform).sizeDelta=new Vector2(245,36);password.contentType=InputField.ContentType.Password;
-            var placeholder=NativeUI.Label(password.transform,"Şifreli oda için oda şifresi",12);placeholder.alignment=TextAnchor.MiddleLeft;password.placeholder=placeholder;
-            var quick=NativeUI.Button(lobby,"HIZLI OYNA",()=>Join("quick"));NativeUI.Place((RectTransform)quick.transform,new Vector2(.5f,1),new Vector2(155,-108),new Vector2(140,36));
-            var viewport=NativeUI.Panel(lobby,"Rooms",new Color(.04f,.08f,.1f,.6f));NativeUI.Place(viewport,new Vector2(.5f,1),new Vector2(0,-218),new Vector2(475,167));viewport.GetComponent<Image>().raycastTarget=true;viewport.gameObject.AddComponent<RectMask2D>();
-            roomList=NativeUI.Panel(viewport,"Content",Color.clear);roomList.anchorMin=new Vector2(0,1);roomList.anchorMax=new Vector2(1,1);roomList.pivot=new Vector2(.5f,1);
-            var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=viewport;scroll.content=roomList;scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
-            var connect=NativeUI.Button(lobby,"YENİDEN BAĞLAN",Connect);NativeUI.Place((RectTransform)connect.transform,new Vector2(.5f,0),new Vector2(-160,25),new Vector2(150,36));
-            var create=NativeUI.Button(lobby,"BOTSIZ ODA KUR",()=>Join("create"));NativeUI.Place((RectTransform)create.transform,new Vector2(.5f,0),new Vector2(0,25),new Vector2(150,36));
-            var privacy=NativeUI.Button(lobby,"GİZLİLİK",()=>Application.OpenURL(DefaultServer+"/privacy.html"));NativeUI.Place((RectTransform)privacy.transform,new Vector2(.5f,0),new Vector2(160,25),new Vector2(150,36));
-            pause=Modal("OYUN DURAKLATILDI",new Vector2(380,315));
-            MenuButton(pause,"OYUNA DÖN",65,()=>SetPaused(false));MenuButton(pause,"SİLAH SATIN AL",112,OpenShop);MenuButton(pause,"SKOR TABLOSU",159,OpenScore);
-            MenuButton(pause,"HASSASİYET: "+controls.Sensitivity.ToString("0.0"),206,()=>{controls.Sensitivity=controls.Sensitivity>=2? .5f:controls.Sensitivity+.25f;PlayerPrefs.SetFloat("s16.native.sensitivity",controls.Sensitivity);Notify("Dokunma hassasiyeti: "+controls.Sensitivity.ToString("0.00"));});
-            MenuButton(pause,"ODADAN AYRIL",253,()=>{Send(new Command{type="leave"});Leave();});pause.gameObject.SetActive(false);
-            score=Modal("SKOR TABLOSU",new Vector2(490,350));MenuButton(score,"KAPAT",310,()=>{score.gameObject.SetActive(false);SetPaused(false);});score.gameObject.SetActive(false);
-            shop=Modal("SİLAH SATIN AL",new Vector2(490,350));int n=0;
-            foreach(var w in data.weapons.Where(w=>w.price>0))
-            {var captured=w.id;var b=NativeUI.Button(shop,w.name+" · $"+w.price,()=>Send(new Command{type="buy",item=captured}));NativeUI.Place((RectTransform)b.transform,new Vector2(.5f,1),new Vector2(n%2==0?-115:115,-65-(n/2)*49),new Vector2(218,42));n++;}
-            var armor=NativeUI.Button(shop,"ZIRH · $650",()=>Send(new Command{type="buy",item="armor"}));NativeUI.Place((RectTransform)armor.transform,new Vector2(.5f,1),new Vector2(115,-212),new Vector2(218,42));
-            MenuButton(shop,"KAPAT",302,()=>{shop.gameObject.SetActive(false);SetPaused(false);});shop.gameObject.SetActive(false);
+            NativeSettings.ApplyQuality();
+            var light=new GameObject("Sun",typeof(Light)).GetComponent<Light>();light.type=LightType.Directional;light.intensity=1.1f;light.transform.rotation=Quaternion.Euler(45,-25,0);light.shadows=LightShadows.Hard;light.shadowStrength=.65f;
+            if(FindAnyObjectByType<EventSystem>()==null)new GameObject("Input",typeof(EventSystem),typeof(InputSystemUIInputModule));
+            BuildUI();ApplySafeArea();ShowLobbyWorld();
+#if UNITY_EDITOR
+            if(VisualPreview)return;
+#endif
+            Connect();
         }
         RectTransform Modal(string title,Vector2 size)
-        {var rect=NativeUI.Panel(safeArea,title,new Color(.035f,.065f,.08f,.97f));NativeUI.Place(rect,new Vector2(.5f,.5f),Vector2.zero,size);rect.GetComponent<Image>().raycastTarget=true;var text=NativeUI.Label(rect,title,22);NativeUI.Place((RectTransform)text.transform,new Vector2(.5f,1),new Vector2(0,-25),new Vector2(size.x-20,40));return rect;}
+        {var rect=NativeUI.Panel(safeArea,title,new Color(.035f,.065f,.08f,.98f));NativeUI.Rounded(rect);NativeUI.Border(rect,new Color(.65f,.75f,.77f,.24f));NativeUI.Place(rect,new Vector2(.5f,.5f),Vector2.zero,size);rect.GetComponent<Image>().raycastTarget=true;var text=NativeUI.Label(rect,title,25);text.font=NativeUI.Heading;NativeUI.Place((RectTransform)text.transform,new Vector2(.5f,1),new Vector2(0,-25),new Vector2(size.x-20,40));return rect;}
         void MenuButton(RectTransform parent,string text,float y,Action action)
         {var button=NativeUI.Button(parent,text,action);NativeUI.Place((RectTransform)button.transform,new Vector2(.5f,1),new Vector2(0,-y),new Vector2(300,40));}
         void Connect()
@@ -108,10 +89,10 @@ namespace Sector16
         }
         void Rooms(RoomInfo[] list)
         {
-            rooms=list??Array.Empty<RoomInfo>();foreach(Transform child in roomList)Destroy(child.gameObject);
+            rooms=list??Array.Empty<RoomInfo>();for(int n=roomList.childCount-1;n>=0;n--)WorldRenderer.Release(roomList.GetChild(n).gameObject);
             roomList.sizeDelta=new Vector2(0,Mathf.Max(167,rooms.Length*48));roomList.anchoredPosition=Vector2.zero;
             for(int n=0;n<rooms.Length;n++)
-            {var r=rooms[n];var button=NativeUI.Button(roomList,(r.locked?"[ŞİFRELİ] ":"")+r.name+" · "+r.players+"/"+r.maxPlayers+" · "+r.mode,()=>Join("join",r.id));NativeUI.Place((RectTransform)button.transform,new Vector2(.5f,1),new Vector2(0,-24-n*48),new Vector2(460,42));}
+            {var r=rooms[n];var button=NativeUI.Button(roomList,"",()=>Join("join",r.id));NativeUI.Place((RectTransform)button.transform,new Vector2(.5f,1),new Vector2(0,-24-n*48),new Vector2(320,44));NativeUI.TextAt(button.transform,r.name,14,new Vector2(0,.5f),new Vector2(115,8),new Vector2(215,20),NativeUI.Paper,TextAnchor.MiddleLeft,true);NativeUI.TextAt(button.transform,(r.map??r.mapId)+"  /  "+r.mode,9,new Vector2(0,.5f),new Vector2(115,-10),new Vector2(215,14),NativeUI.Muted);NativeUI.TextAt(button.transform,r.players+"/"+r.maxPlayers+(r.locked?"  KİLİTLİ":"  GİR"),11,new Vector2(1,.5f),new Vector2(-44,0),new Vector2(80,32),NativeUI.Accent,TextAnchor.MiddleCenter,true);}
         }
         void Receive(Envelope m)
         {
@@ -126,7 +107,11 @@ namespace Sector16
                 case "purchased":if(!string.IsNullOrEmpty(m.weapon))selected=m.weapon;break;
                 case "kill":Notify(m.killer+" → "+m.victim);break;
                 case "end":Notify("Maç tamamlandı: "+m.winner);break;
-                case "shot":world.Shot(m);if(m.id==id)Recoil();break;
+                case "shot":world.Shot(m);audio.Shot(m,m.id==id);if(m.id==id)Recoil();break;
+                case "hit":gameHud.Hit(m.head,m.kill);audio.Hit();break;
+                case "hurt":gameHud.Hurt();audio.Hurt();break;
+                case "flash":gameHud.Flash((float)m.duration/1000);break;
+                case "explosion":audio.Explosion(m.position);break;
                 case "pong":Send(new Command{type="latency",ms=Math.Max(0,DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()-m.t)});break;
             }
         }
@@ -134,6 +119,7 @@ namespace Sector16
         {
             if(room==null)return;var self=Array.Find(message.players??Array.Empty<PlayerState>(),p=>p.id==id);if(self==null)return;
             snapshot=message;own=self;lastSnapshot=Time.realtimeSinceStartup;
+            if(self.reload>0&&!wasReloading)audio.Reload();wasReloading=self.reload>0;
             var next=data.maps.FirstOrDefault(m=>m.id==message.map);
             if(next==null){SetPaused(true);Notify("Bu harita istemci verisinde yok.");return;}
             if(map!=next){map=next;world.Map(map,view);pending.Clear();batch.Clear();}
@@ -141,11 +127,13 @@ namespace Sector16
             pending.RemoveAll(i=>i.seq<=self.ack);predicted.Restore(self);
             if(CanMove())foreach(var i in pending)Movement.Simulate(predicted,i,map);
             controls.Context(self,message.mode=="bomb",self.hp<=0&&RoundMode());world.Players(message,id);
+            if(!paused&&self.hp>0&&self.ammo==0&&self.reserve>0&&self.reload<=0&&self.weapon!="knife")controls.RequestReload();
         }
         bool RoundMode()=>snapshot!=null&&(snapshot.mode=="rounds"||snapshot.mode=="bomb"||snapshot.mode=="elimination");
         bool CanMove()=>own!=null&&own.hp>0&&snapshot.restart<=0&&(!RoundMode()||snapshot.phase=="live");
         void Recoil()
         {
+            if(Time.realtimeSinceStartup-lastRecoil<.04f)return; // Shotgun pellets represent one trigger pull.
             var w=data.weapons.FirstOrDefault(x=>x.id==selected);if(w==null||w.melee)return;
             if(Time.realtimeSinceStartup-lastRecoil>.45f)recoilIndex=0;lastRecoil=Time.realtimeSinceStartup;
             if(w.pattern!=null&&w.pattern.Length>0){var p=w.pattern[recoilIndex++%w.pattern.Length];controls.Yaw+=p.x*w.kick;controls.Pitch=Movement.Clamp(controls.Pitch+p.y*w.kick,-1.45,1.45);}gunKick=1;
@@ -158,6 +146,7 @@ namespace Sector16
             paused=value;controls.SetGameplay(room!=null&&!value);pause.gameObject.SetActive(room!=null&&value&&!score.gameObject.activeSelf&&!shop.gameObject.activeSelf);
             Cursor.lockState=!Application.isMobilePlatform&&room!=null&&!value?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=Cursor.lockState!=CursorLockMode.Locked;
         }
+        void TogglePause(){if(room==null)return;settings.Show(false);score.gameObject.SetActive(false);shop.gameObject.SetActive(false);SetPaused(!paused);}
         void OpenScore()
         {
             if(room==null)return;shop.gameObject.SetActive(false);SetPaused(true);pause.gameObject.SetActive(false);score.gameObject.SetActive(true);
@@ -167,11 +156,12 @@ namespace Sector16
         }
         void OpenShop()
         {if(own?.canBuy!=true){Notify("Satın almak için takımının üssüne dön.");return;}score.gameObject.SetActive(false);SetPaused(true);pause.gameObject.SetActive(false);shop.gameObject.SetActive(true);}
+        void OpenSettings(){if(room==null)return;shop.gameObject.SetActive(false);score.gameObject.SetActive(false);SetPaused(true);pause.gameObject.SetActive(false);settings.Show(true);}
         void Leave()
-        {room=null;own=null;snapshot=null;pending.Clear();batch.Clear();controls?.SetGameplay(false);world?.Clear();if(lobby!=null)lobby.gameObject.SetActive(true);if(pause!=null)pause.gameObject.SetActive(false);if(shop!=null)shop.gameObject.SetActive(false);if(score!=null)score.gameObject.SetActive(false);Cursor.lockState=CursorLockMode.None;Cursor.visible=true;}
+        {room=null;own=null;snapshot=null;map=null;wasReloading=false;pending.Clear();batch.Clear();controls?.SetGameplay(false);world?.Clear();if(lobby!=null)lobby.gameObject.SetActive(true);if(pause!=null)pause.gameObject.SetActive(false);if(shop!=null)shop.gameObject.SetActive(false);if(score!=null)score.gameObject.SetActive(false);settings?.Show(false);Cursor.lockState=CursorLockMode.None;Cursor.visible=true;if(view!=null&&data!=null)ShowLobbyWorld();}
         void Notify(string text){notice.text=text;noticeUntil=Time.realtimeSinceStartup+4;}
         void ApplySafeArea()
-        {var rect=Screen.safeArea;if(rect==lastSafe)return;lastSafe=rect;safeArea.anchorMin=new Vector2(rect.xMin/Screen.width,rect.yMin/Screen.height);safeArea.anchorMax=new Vector2(rect.xMax/Screen.width,rect.yMax/Screen.height);safeArea.offsetMin=safeArea.offsetMax=Vector2.zero;controls.Reset();}
+        {var rect=Screen.safeArea;if(rect==lastSafe||rect.width<=0||Screen.width<=0||Screen.height<=0)return;lastSafe=rect;var scaler=safeArea.GetComponentInParent<CanvasScaler>();scaler.referenceResolution=new Vector2(844*Screen.width/rect.width,390);safeArea.anchorMin=new Vector2(rect.xMin/Screen.width,rect.yMin/Screen.height);safeArea.anchorMax=new Vector2(rect.xMax/Screen.width,rect.yMax/Screen.height);safeArea.offsetMin=safeArea.offsetMax=Vector2.zero;controls.Reset();}
         void Update()
         {
             ApplySafeArea();int received=0;
@@ -180,7 +170,7 @@ namespace Sector16
             if(socket!=null&&!socket.IsOpen&&socket.Error!=null&&(connecting||hadConnection)){connecting=hadConnection=false;Leave();network.text="BAĞLANTI KESİLDİ";Notify("Yeniden bağlan düğmesine dokun.");}
             if(socket?.IsOpen==true&&Time.realtimeSinceStartup-lastPing>2){lastPing=Time.realtimeSinceStartup;Send(new Command{type="ping",t=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()});}
             if(Time.realtimeSinceStartup>noticeUntil)notice.text="";
-            if(room==null||own==null||map==null){hud.text="";crosshair.gameObject.SetActive(false);return;}
+            if(room==null||own==null||map==null){gameHud.Show(false);crosshair.gameObject.SetActive(false);return;}
             if(!paused&&Time.realtimeSinceStartup-lastSnapshot>2){SetPaused(true);Notify("Bağlantı gecikti; sunucu verisi bekleniyor.");}
             accumulator+=Math.Min(Time.unscaledDeltaTime,.1f);int ticks=0;
             while(accumulator>=Movement.Tick&&ticks++<6)
@@ -194,11 +184,10 @@ namespace Sector16
             if(own.hp<=0&&RoundMode())
             {var ally=snapshot.players.FirstOrDefault(p=>p.id!=id&&p.team==own.team&&p.hp>0);if(ally!=null)view.transform.SetPositionAndRotation(WorldRenderer.Position(ally.x,Movement.Eye(ally),ally.z),WorldRenderer.Rotation(ally.yaw,ally.pitch));}
             var magnification=controls.Aim==0?1:selected=="awp"?(controls.Aim==2?8:4):own.attachments?.Get(selected)?.scope==true?2:1/.74;
-            var fov=(float)(2*Math.Atan(Math.Tan(78*Math.PI/360)/magnification)*180/Math.PI);
-            view.fieldOfView=Mathf.Lerp(view.fieldOfView,fov,1-Mathf.Exp(-Time.deltaTime*14));gunKick=Mathf.Max(0,gunKick-Time.deltaTime*7);world.Gun(view,selected,own.hp>0&&controls.Aim==0,gunKick);
-            crosshair.gameObject.SetActive(!paused&&own.hp>0);hud.text=$"SAĞLIK {own.hp}  •  ZIRH {own.armor}\n{selected}  {own.ammo}/{own.reserve}";
-            network.text=$"MAVİ {snapshot.scores?.blue}  •  {Math.Floor(snapshot.remaining/60):00}:{Math.Floor(snapshot.remaining%60):00}  •  TURUNCU {snapshot.scores?.orange}";
-            if(snapshot.escort!=null)network.text+=$"\nESKORT %{Math.Round(snapshot.escort.progress*100)}"+(snapshot.escort.contested?" · ÇATIŞMA":"");
+            var fov=(float)(2*Math.Atan(Math.Tan(NativeSettings.FieldOfView*Math.PI/360)/magnification)*180/Math.PI);
+            view.fieldOfView=Mathf.Lerp(view.fieldOfView,fov,1-Mathf.Exp(-Time.deltaTime*14));gunKick=Mathf.Max(0,gunKick-Time.deltaTime*7);var definition=data.weapons.FirstOrDefault(w=>w.id==selected);world.Gun(view,selected,own.hp>0&&!(selected=="awp"&&controls.Aim>0),gunKick,(float)Math.Sqrt(own.vx*own.vx+own.vz*own.vz),own.reload>0&&definition!=null?1-(float)(own.reload/definition.reload):0,controls.Aim>0);
+            crosshair.gameObject.SetActive(!paused&&own.hp>0&&!(controls.Aim>0&&selected=="awp"));gameHud.Show(true);gameHud.State(snapshot,own,definition?.name??selected,controls.Aim>0&&selected=="awp",paused);
+            audio.Step(own,!paused);
         }
         void OnApplicationPause(bool value){if(value&&room!=null)SetPaused(true);}
         void OnApplicationFocus(bool value){if(!value&&room!=null)SetPaused(true);}

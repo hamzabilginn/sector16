@@ -9,8 +9,12 @@ namespace Sector16
         readonly Dictionary<string,GameObject> players=new Dictionary<string,GameObject>();
         readonly Dictionary<string,PlayerState> targets=new Dictionary<string,PlayerState>();
         readonly Dictionary<string,GameObject> effects=new Dictionary<string,GameObject>();
+        readonly Dictionary<string,NativeArt.Instance> operators=new Dictionary<string,NativeArt.Instance>();
+        NativeArt art;
+        NativeArt.Instance gunArt;
         GameObject mapRoot,gun;
         string mapId,weapon;
+        float aimBlend;
         public static Vector3 Position(double x,double y,double z)=>new Vector3((float)x,(float)y,(float)-z);
         public static Quaternion Rotation(double yaw,double pitch=0)=>Quaternion.Euler((float)(-pitch*Mathf.Rad2Deg),(float)(-yaw*Mathf.Rad2Deg),0);
         public Material Material(int rgb)
@@ -20,26 +24,20 @@ namespace Sector16
             mat=new Material(shader);mat.color=Color(rgb);materials[rgb]=mat;return mat;
         }
         public static Color Color(int rgb)=>new Color(((rgb>>16)&255)/255f,((rgb>>8)&255)/255f,(rgb&255)/255f);
+        public static void Release(Object value){if(value==null)return;if(Application.isPlaying)Object.Destroy(value);else Object.DestroyImmediate(value);}
         GameObject Primitive(string name,PrimitiveType type,Transform parent,Vector3 position,Vector3 size,int color)
         {
-            var obj=GameObject.CreatePrimitive(type);obj.name=name;obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=size;obj.GetComponent<Renderer>().sharedMaterial=Material(color);Destroy(obj.GetComponent<Collider>());return obj;
+            var obj=GameObject.CreatePrimitive(type);obj.name=name;obj.transform.SetParent(parent,false);obj.transform.localPosition=position;obj.transform.localScale=size;obj.GetComponent<Renderer>().sharedMaterial=Material(color);Release(obj.GetComponent<Collider>());return obj;
         }
         public void Map(MapData map,Camera camera)
         {
-            if(mapId==map.id)return;mapId=map.id;if(mapRoot!=null)Destroy(mapRoot);
-            mapRoot=new GameObject(map.name);mapRoot.transform.SetParent(transform,false);
+            if(mapId==map.id)return;mapId=map.id;if(mapRoot!=null)Release(mapRoot);
+            if(art==null)art=gameObject.AddComponent<NativeArt>();
+            mapRoot=art.Create("map-"+map.id,transform,true).root;
             camera.backgroundColor=Color(map.sky);RenderSettings.ambientLight=new Color(.65f,.7f,.74f);
-            Primitive("Ground",PrimitiveType.Cube,mapRoot.transform,new Vector3(0,-.05f,0),new Vector3((float)map.width,.1f,(float)map.depth),map.floor);
-            foreach(var b in map.boxes)
-            {
-                int color=b.color!=0?b.color:b.kind=="ice"?0xaacdd7:b.kind=="sand"?0xb5a47d:b.kind=="container"?0x436c74:b.kind=="crate"?0x907b59:0x586b72;
-                Primitive(b.kind,PrimitiveType.Cube,mapRoot.transform,Position(b.x,b.y,b.z),new Vector3((float)b.w,(float)b.h,(float)b.d),color);
-            }
-            foreach(var team in new[]{"blue","orange"})
-                Primitive(team+" base",PrimitiveType.Cube,mapRoot.transform,Position(0,.01,team=="blue"?map.baseZ:-map.baseZ),new Vector3((float)map.width-2,.02f,4),team=="blue"?0x326680:0xa76e40);
+            RenderSettings.fog=true;RenderSettings.fogColor=Color(map.sky);RenderSettings.fogMode=FogMode.ExponentialSquared;RenderSettings.fogDensity=map.id=="city"?.003f:.009f;
             foreach(var site in map.sites)
                 Primitive("Site "+site.id,PrimitiveType.Cylinder,mapRoot.transform,Position(site.x,.035,site.z),new Vector3(6,.02f,6),0xa6ac58);
-            StaticBatchingUtility.Combine(mapRoot);
         }
         public void Players(Envelope state,string selfId)
         {
@@ -49,15 +47,13 @@ namespace Sector16
                 if(p.id==selfId)continue;seen.Add(p.id);targets[p.id]=p;
                 if(!players.TryGetValue(p.id,out var actor))
                 {
-                    actor=new GameObject(p.name);actor.transform.SetParent(transform,false);int color=p.team=="blue"?0x3874a1:0xba7950;
-                    Primitive("Body",PrimitiveType.Capsule,actor.transform,new Vector3(0,.82f,0),new Vector3(.55f,.65f,.5f),color);
-                    Primitive("Head",PrimitiveType.Sphere,actor.transform,new Vector3(0,1.58f,0),Vector3.one*.34f,0xb5aa8b);
-                    Primitive("Weapon",PrimitiveType.Cube,actor.transform,new Vector3(.25f,1.1f,.25f),new Vector3(.13f,.13f,.7f),0x202929);
+                    if(art==null)art=gameObject.AddComponent<NativeArt>();
+                    var model=art.Create("operator-"+(p.team=="blue"?"blue":"orange"),transform);actor=model.root;actor.name=p.name;operators[p.id]=model;
                     players[p.id]=actor;actor.transform.position=Position(p.x,p.y,p.z);
                 }
-                actor.SetActive(p.hp>0);actor.transform.localScale=new Vector3(1,p.crouch?.63f:1,1);
+                actor.SetActive(p.hp>0);
             }
-            foreach(var id in new List<string>(players.Keys))if(!seen.Contains(id)){Destroy(players[id]);players.Remove(id);targets.Remove(id);}
+            foreach(var id in new List<string>(players.Keys))if(!seen.Contains(id)){Release(players[id]);players.Remove(id);targets.Remove(id);operators.Remove(id);}
             var points=new Dictionary<string,PointState>();
             foreach(var g in state.grenades??System.Array.Empty<PointState>())points["grenade-"+g.id]=g;
             foreach(var g in state.smokes??System.Array.Empty<PointState>())points["smoke-"+g.id]=g;
@@ -66,23 +62,25 @@ namespace Sector16
             foreach(var flag in new[]{state.flags?.blue,state.flags?.orange})if(flag!=null)points["flag-"+flag.team]=new PointState{x=flag.x,y=flag.y+.8,z=flag.z,kind="flag"};
             foreach(var pair in points)
             {
-                if(!effects.TryGetValue(pair.Key,out var visual)){visual=Primitive(pair.Key,pair.Value.kind=="escort"?PrimitiveType.Cube:PrimitiveType.Sphere,transform,Vector3.zero,pair.Value.kind=="escort"?new Vector3(2,1.1f,3):Vector3.one*.25f,pair.Value.kind=="smoke"?0x7c8585:0xb7cf69);effects[pair.Key]=visual;}
+                bool smokeCloud=pair.Key.StartsWith("smoke-");
+                if(!effects.TryGetValue(pair.Key,out var visual)){visual=Primitive(pair.Key,pair.Value.kind=="escort"?PrimitiveType.Cube:PrimitiveType.Sphere,transform,Vector3.zero,pair.Value.kind=="escort"?new Vector3(2,1.1f,3):Vector3.one*.25f,smokeCloud?0x7c8585:0xb7cf69);effects[pair.Key]=visual;}
                 visual.transform.position=Position(pair.Value.x,pair.Value.y+.2,pair.Value.z);
                 if(pair.Value.kind=="escort")visual.transform.rotation=Rotation(state.escort.yaw);
-                if(pair.Value.kind=="smoke")visual.transform.localScale=new Vector3(6,4.5f,6);
+                if(smokeCloud){visual.transform.localScale=new Vector3(6,4.5f,6);var smoke=Material(0x7c8585);smoke.color=new Color(.49f,.52f,.52f,.65f);smoke.SetInt("_ZWrite",0);smoke.SetInt("_Cull",0);smoke.renderQueue=3000;visual.GetComponent<MeshRenderer>().shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;}
             }
-            foreach(var id in new List<string>(effects.Keys))if(!points.ContainsKey(id)){Destroy(effects[id]);effects.Remove(id);}
+            foreach(var id in new List<string>(effects.Keys))if(!points.ContainsKey(id)){Release(effects[id]);effects.Remove(id);}
         }
-        public void Gun(Camera camera,string selected,bool visible,float recoil)
+        public void Gun(Camera camera,string selected,bool visible,float recoil,float speed=0,float reload=0,bool aimed=false)
         {
             if(weapon!=selected)
             {
-                weapon=selected;if(gun!=null)Destroy(gun);gun=new GameObject(selected);gun.transform.SetParent(camera.transform,false);
-                Primitive("Receiver",PrimitiveType.Cube,gun.transform,new Vector3(0,0,.03f),new Vector3(.13f,.12f,.42f),0x243030);
-                Primitive("Barrel",PrimitiveType.Cube,gun.transform,new Vector3(0,.03f,.4f),new Vector3(.04f,.04f,.42f),0x161d20);
-                Primitive("Grip",PrimitiveType.Cube,gun.transform,new Vector3(0,-.1f,-.04f),new Vector3(.075f,.2f,.1f),0x614e3a);
+                weapon=selected;if(gun!=null)Release(gun);if(art==null)art=gameObject.AddComponent<NativeArt>();gunArt=art.Create("gun-"+selected,camera.transform);gun=gunArt.root;
+                foreach(var renderer in gun.GetComponentsInChildren<MeshRenderer>()){renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;}
             }
-            gun.SetActive(visible);gun.transform.localPosition=new Vector3(.22f,-.2f,.48f-recoil*.15f);gun.transform.localRotation=Quaternion.Euler(-recoil*12,0,0);
+            gun.SetActive(visible);gunArt.Restore();float bob=Mathf.Sin(Time.time*9)*Mathf.Min(speed/7,1)*.006f;
+            aimBlend=Application.isPlaying?Mathf.Lerp(aimBlend,aimed?1:0,1-Mathf.Exp(-Time.deltaTime*14)):aimed?1:0;
+            gun.transform.localScale=Vector3.one*.88f;gun.transform.localPosition=Vector3.Lerp(new Vector3(.25f,-.28f,.64f),new Vector3(0,-.085f,.40f),aimBlend)+new Vector3(bob*(1-aimBlend),-Mathf.Abs(bob),-recoil*.09f);gun.transform.localRotation=Quaternion.Euler(-recoil*8,0,bob*80*(1-aimBlend));
+            if(reload>0){float reach=Mathf.Sin(Mathf.Clamp01(reload)*Mathf.PI);gun.transform.localRotation*=Quaternion.Euler(-reach*12,reach*14,-reach*22);var mag=gunArt.Joint("magazine");if(mag!=null)mag.localPosition+=new Vector3(-reach*.05f,-reach*.3f,-reach*.08f);var hand=gunArt.Joint("support");if(hand!=null)hand.localPosition+=new Vector3(0,-reach*.12f,reach*.14f);}
         }
         public void Shot(Envelope shot)
         {
@@ -96,13 +94,14 @@ namespace Sector16
             foreach(var pair in players)
             {
                 var p=targets[pair.Key];pair.Value.transform.position=Vector3.Lerp(pair.Value.transform.position,Position(p.x,p.y,p.z),t);pair.Value.transform.rotation=Quaternion.Slerp(pair.Value.transform.rotation,Rotation(p.yaw),t);
+                NativeArt.AnimateOperator(operators[pair.Key],p,Time.time);
             }
         }
         public void Clear()
         {
-            foreach(var p in players.Values)Destroy(p);players.Clear();targets.Clear();
-            foreach(var p in effects.Values)Destroy(p);effects.Clear();
+            foreach(var p in players.Values)Release(p);players.Clear();targets.Clear();operators.Clear();if(gun!=null)gun.SetActive(false);
+            foreach(var p in effects.Values)Release(p);effects.Clear();
         }
-        void OnDestroy(){foreach(var material in materials.Values)Destroy(material);}
+        void OnDestroy(){foreach(var material in materials.Values)Release(material);}
     }
 }
