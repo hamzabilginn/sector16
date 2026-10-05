@@ -11,13 +11,14 @@ workflows:
     scripts:
       - name: Install dependencies and test
         script: |
-          npm install --include=dev --ignore-scripts
-          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
+          set -e
+          npm ci --include=dev --ignore-scripts
           npm test
           npm run build:mobile
           npx cap sync android
       - name: Signed release
         script: |
+          set -e
           export SECTOR16_KEYSTORE="$CM_KEYSTORE_PATH"
           export SECTOR16_STORE_PASSWORD="$CM_KEYSTORE_PASSWORD"
           export SECTOR16_KEY_PASSWORD="$CM_KEY_PASSWORD"
@@ -43,13 +44,14 @@ workflows:
     scripts:
       - name: Install dependencies and test
         script: |
-          npm install --include=dev --ignore-scripts
-          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
+          set -e
+          npm ci --include=dev --ignore-scripts
           npm test
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
         script: |
+          set -e
           cd ios/App
           build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
           if [ "$build_number" -lt 20 ]; then build_number=20; fi
@@ -58,6 +60,7 @@ workflows:
           xcode-project use-profiles
       - name: Build signed IPA
         script: |
+          set -e
           xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
@@ -77,13 +80,14 @@ workflows:
     scripts:
       - name: Install dependencies and test
         script: |
-          npm install --include=dev --ignore-scripts
-          npm install --no-save --ignore-scripts esbuild@0.28.2 ws@8.21.3 @capacitor/cli@8.5.1
+          set -e
+          npm ci --include=dev --ignore-scripts
           npm test
           npm run build:mobile
           npx cap sync ios
       - name: Version and signing
         script: |
+          set -e
           cd ios/App
           build_number=$(( ${PROJECT_BUILD_NUMBER:-18} + 1 ))
           if [ "$build_number" -lt 20 ]; then build_number=20; fi
@@ -92,6 +96,7 @@ workflows:
           xcode-project use-profiles
       - name: Build signed IPA
         script: |
+          set -e
           xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
