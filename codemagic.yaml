@@ -1,4 +1,23 @@
 workflows:
+  android-unity-aab:
+    name: Sector 16 Native Unity - Android AAB
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      java: 17
+      groups:
+        - unity_export
+      android_signing:
+        - sector16_upload
+    scripts:
+      - name: Verify and sign the native Unity Android update
+        script: |
+          set -e
+          python3 scripts/native-android-ci.py
+    artifacts:
+      - build/unity-android/sector16-native-*.aab
+      - build/unity-android/sector16-export.json
+
   android-release:
     name: Sector 16 Android AAB
     instance_type: linux_x2

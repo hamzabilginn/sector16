@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Check','Prepare','Windows','IOS','Editor','Preview')]
+    [ValidateSet('Check','Prepare','Windows','IOS','Android','Editor','Preview')]
     [string]$Mode = 'Check',
     [string]$EditorPath = 'D:\unity\6000.6.2f1\Editor\Unity.exe',
     [string]$CacheRoot = 'D:\Codex\unity-cache',
@@ -15,8 +15,10 @@ New-Item -ItemType Directory -Path $taskArtifacts, $CacheRoot -Force | Out-Null
 $env:TEMP = Join-Path $CacheRoot 'Temp'
 $env:TMP = $env:TEMP
 $env:UPM_CACHE_ROOT = Join-Path $CacheRoot 'Packages'
-New-Item -ItemType Directory -Path $env:TEMP, $env:UPM_CACHE_ROOT -Force | Out-Null
-if ($Mode -in 'Windows','IOS') {
+$env:GRADLE_USER_HOME = Join-Path $CacheRoot 'Gradle'
+$env:BEE_CACHE_DIRECTORY = Join-Path $CacheRoot 'Bee'
+New-Item -ItemType Directory -Path $env:TEMP, $env:UPM_CACHE_ROOT, $env:GRADLE_USER_HOME, $env:BEE_CACHE_DIRECTORY -Force | Out-Null
+if ($Mode -in 'Windows','IOS','Android') {
     if ([string]::IsNullOrWhiteSpace($Version) -or $BuildNumber -lt 1) {
         throw 'Builds require -Version and a positive -BuildNumber. For iOS, check the current App Store version and used build numbers first.'
     }
@@ -35,11 +37,13 @@ $taskMethod = switch ($Mode) {
     'Prepare' { 'Sector16.Editor.NativeBuild.Prepare' }
     'Windows' { 'Sector16.Editor.NativeBuild.Windows' }
     'IOS' { 'Sector16.Editor.NativeBuild.IOS' }
+    'Android' { 'Sector16.Editor.NativeBuild.Android' }
     'Preview' { 'Sector16.Editor.NativePresentationChecks.Capture' }
 }
 $taskArguments += @('-batchmode','-quit','-executeMethod',$taskMethod)
 if ($Mode -eq 'IOS') { $taskArguments += @('-buildTarget','iOS') }
 if ($Mode -eq 'Windows') { $taskArguments += @('-buildTarget','Win64') }
+if ($Mode -eq 'Android') { $taskArguments += @('-buildTarget','Android') }
 $taskProcess = Start-Process -FilePath $EditorPath -ArgumentList $taskArguments -WindowStyle Hidden -PassThru
 $taskProcess.WaitForExit()
 Write-Output "Unity $Mode exit: $($taskProcess.ExitCode). Log: $taskLog"

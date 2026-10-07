@@ -79,3 +79,25 @@ powershell -NoProfile -File scripts/package-unity-ios.ps1
 5. TestFlight ile fiziksel iPhone/iPad ve gerçek web oyuncusuyla oynanış doğrulanır; sonra güncelleme incelemeye gönderilir.
 
 Bu dal canlı web sunucusuna dağıtılmaz. Yerel iOS dışa aktarımı imzalı IPA, TestFlight yüklemesi veya Apple onayı anlamına gelmez.
+
+## Google Play güncellemesi
+
+Play Console'da mevcut üretim paketi **1.5.0 (version code 1)** görünüyordu. Aynı Unity istemcisi, mobil arayüz ve joystick düzeltmesi Android için **1.6.0 (23)** olarak hazırlanır. Paket kimliği `com.webdehasi.sector16` korunur; yeni uygulama kaydı açılmaz. Başka bir kanalda daha yüksek kod kullanıldıysa kullanılmamış daha yüksek bir kod gerekir.
+
+Unity 6.6 Android Build Support, SDK/API 36, NDK r27c ve OpenJDK 17 modülleri gerekir. Android 8/API 26 ve üzeri, ARMv7 + ARM64, IL2CPP ve ETC2 seçilir. Önceki web paketi API 24 destekliyordu; yeni Unity paketinin minimumu 26'dır. Kod, paket verisi ve Gradle/Bee önbelleği D: üzerinde tutulur.
+
+```powershell
+powershell -NoProfile -File scripts/unity-on-d.ps1 -Mode Android -Version 1.6.0 -BuildNumber 23
+powershell -NoProfile -File scripts/package-unity-android.ps1
+```
+
+Unity `artifacts/unity-android/Sector16.aab` ve kontrol sonucunu içeren metadata üretir. Paketleme, yerel JAR imzasını kaldırır; uygulama içeriği değişmez. `artifacts/sector16-unity-android.zip` yalnızca imzasız AAB ve SHA-256 içeren metadata taşır. Google Play'e bu imzasız dosya yüklenmez.
+
+1. ZIP özel depoya yüklenir. HTTPS bağlantısı, Codemagic `unity_export` grubuna **secret `UNITY_ANDROID_EXPORT_URL`** olarak eklenir; `UNITY_IOS_EXPORT_URL` ayrı kalır.
+2. Dal **codex/unity-crossplay-client**, iş akışı **Sector 16 Native Unity - Android AAB** seçilir. **Sector 16 Android AAB** önceki Capacitor istemcisini derler.
+3. Yeni iş akışı ZIP'i doğrular; gerçek AAB manifestinde paket, sürüm, SDK düzeyleri, release modu ve internet iznini kontrol eder. ARMv7/ARM64 native kitaplıkları ve ARM64 16 KB ELF hizalaması da doğrulanır. Resmi bundletool 1.18.3 SHA-256 ile sabitlenir.
+4. Codemagic mevcut **sector16_upload** anahtarını kullanır. Anahtar ve parolalar repo/arşive eklenmez; JAR imzalama aracı parolaları ortam değişkenlerinden okur. Unity lisansı bu imzalama adımı için gerekmez.
+5. Codemagic Artifacts'tan **sector16-native-1.6.0-23.aab** indirilir. Fiziksel Android cihazında hareket, çoklu dokunma ve gerçek web/iOS oyuncusuyla aynı oda doğrulanır.
+6. Mevcut Play Console uygulamasında üretim güncellemesine bu AAB yüklenir. Sürüm adı **1.6.0**, Türkçe sürüm notları girilir; sonraki ekranda hatalar giderilip Yayın özeti üzerinden incelemeye gönderilir. Eski **1 (1.5.0)** paketini “Dahil et” seçmek yeni native güncellemeyi yüklemez.
+
+Bu iş akışı Google Play'e otomatik yayın yapmaz. Yerel paket ve imza kontrolleri fiziksel Android oynanış testi veya Google onayı anlamına gelmez.

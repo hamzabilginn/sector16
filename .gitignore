@@ -10,6 +10,7 @@ artifacts/
 release-secrets/
 android/local.properties
 *.py
+!scripts/native-android-ci.py
 
 *.p8
 *.p12
@@ -27,3 +28,5 @@ unity-client/Tests/obj/
 unity-client/*.csproj
 unity-client/*.sln
 build/unity-ios/
+build/unity-android/
+unity-client/.utmp/
